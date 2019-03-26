@@ -1,0 +1,13 @@
+pandas
+jupyterlab
+jupyterlab-git
+jupyter-helpers
+tqdm
+rpy2
+pyensembl
+numba
+scipy
+xlrd
+matplotlib
+tzlocal
+inflection
