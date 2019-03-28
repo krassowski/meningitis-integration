@@ -15,6 +15,10 @@ Similarly, an exclamation mark represents a bash command, e.g. `!ls`.
 
 The generic helpers are stored in [helpers](helpers) directory, regardless of the implementation language.
 
+### Analyses
+
+For the list of conducted and planned analyses, please see the [Research_plan.md](Research_plan.md)
+
 
 ## Setup
 
