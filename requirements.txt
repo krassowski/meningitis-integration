@@ -1,7 +1,6 @@
 IPython
 pandas
 jupyterlab
-jupyterlab-git
 jupyter-helpers
 tqdm
 rpy2
