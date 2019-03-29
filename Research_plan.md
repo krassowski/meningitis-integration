@@ -42,9 +42,10 @@ I was aiming to chose techniques which are either established as standard in ana
 - [ ] Multiple regressions/ANOVA using top DEGs (1 day)
 
 I do not have a strong intuition on use of multiple regressions in this setting:
- - while the simpler approach would be to apply the model to all the variables and correct for multiple testing,
- - I could also start with the specialised DE tools which would first highlight the genes/proteins which
- are differentially expressed between groups.
+ - while the simpler approach would be to apply the model to all the variables and correct for multiple testing (MT),
+ - I could also start with the specialised DE tools which would first highlight
+ (i.e. test for significance and correct for MT of the DEGs with more specialized approaches)
+ the genes/proteins which are differentially expressed between groups.
 
 ### Multiple omics
 - [ ] Joint NMF clustering: a simple approach for unsupervised clustering (1 day)
