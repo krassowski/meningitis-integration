@@ -27,6 +27,7 @@ for future clinical use.
 - [x] Basic exploration: extraction, reformatting, sanity checks: ([notebook](data_exploration/Clinical_data_first_look.ipynb))
 - [ ] Derived variables (e.g. age, survival) and correlations (e.g. CD4) (0.25 day)
   - which clinical variables can be used as covariates, which should be use (or can be considered as) outcomes
+  - descriptive statistics to summarize characteristics of the studied cohort
 
 ## Preliminary analyses
 
@@ -57,15 +58,25 @@ I do not have a strong intuition on use of multiple regressions in this setting:
 - [ ] Reading up on scaling, de-noising, transformations and normalization (4 days)
   - [ ] Application to the analyzed omics data (2-3 days)
 
-### Multi-omic comparison of patient groups (classes)
-- [ ] PLS
-- [ ] O-PLS
-- ?
+### Comparison of patient groups (by condition)
+- [ ] single-omic (O)PLS-DA discrimination analysis (X = [protein | RNA], Y=patient group)
+- [ ] multi-omics (O)PLS-DA discrimination analysis (X = [protein, RNA], Y=patient group)
 
 ### Regression on clinical outcomes
-- [ ] PLS
-- [ ] O-PLS
-- [ ] Looking for biomarkers
+Due to missing data, we may be a need to perform a few analyses:
+  - comprehensive "high-level" analysis with the clinical variables available for all patients
+    (e.g. survival, age, CSF color, CSF cloudiness, HIV status),
+  - subgroup-specific analyses, including the variables which were measured only for these patients:
+     - HIV positive patients, additional variables: CD4, ARV, UnARV
+     - patients with history of TB, additional variables: PrevTBForm, PrevTBTreat, OnTBTreat,
+     (potentially also: DateTBTreat and DateTBTreatStop, though these are not useful on their own as are mutually exclusive; however when combined with other dates it might of some use)
+
+- [ ] (O2)-PLS: single-omic regression (X=[protein | RNA], Y=clinical outcomes)
+- [ ] (O2)-PLS: multi-omics regression (X=[protein, RNA], Y=clinical outcomes)
+
+### Multi-omics exploration?
+- [ ] O2-PLS (X=protein, Y=RNA), O2 because the relation in either way is equally interesting.
+
 
 ## Comparison to other multi-view approaches
 - [ ] Compare to the joint NMF results
