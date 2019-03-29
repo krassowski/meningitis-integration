@@ -26,14 +26,13 @@ for future clinical use.
 ### Clinical dataset
 - [x] Basic exploration: extraction, reformatting, sanity checks: ([notebook](data_exploration/Clinical_data_first_look.ipynb))
 - [ ] Derived variables (e.g. age, survival) and correlations (e.g. CD4) (0.25 day)
-  - which clinical variables can be used as covariates, which should be use (or can be considered as) outcomes
+  - which clinical variables can be used as covariates, which should be used (or, can be considered as) outcomes
   - descriptive statistics to summarize characteristics of the studied cohort
 
 ## Preliminary analyses
 
-These are proposed analyses which I propose to perform on the data in parallel to the PLS study.
-I chose techniques which are either established as standard in analysis of expression data, or very easy to apply
-(i.e. I think that I can complete the analysis in less than 2 days).
+These analyses are proposed to be carried out in parallel to the PLS study.
+I was aiming to chose techniques which are either established as standard in analysis of expression data, and/or easy to apply (so that the main focus is still on the PLS).
 
 ### Single omic
 - [ ] Differential expression (DE) (1 day)
@@ -44,7 +43,8 @@ I chose techniques which are either established as standard in analysis of expre
 
 I do not have a strong intuition on use of multiple regressions in this setting:
  - while the simpler approach would be to apply the model to all the variables and correct for multiple testing,
- - I could also start with the specialised DE tools which would first highlight the genes/proteins which have substantial variance between the groups, but then I am focusing the hypotheses at the predefined groups.
+ - I could also start with the specialised DE tools which would first highlight the genes/proteins which
+ are differentially expressed between groups.
 
 ### Multiple omics
 - [ ] Joint NMF clustering: a simple approach for unsupervised clustering (1 day)
@@ -76,7 +76,7 @@ Due to missing data, we may be a need to perform a few analyses:
 
 ### Multi-omics exploration?
 - [ ] O2-PLS (X=protein, Y=RNA), O2 because the relation in either way is equally interesting.
-
+[(Bylesjo et al, 2007)](https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1365-313X.2007.03293.x) has an example of such analysis (supervised by J. Trygg).
 
 ## Comparison to other multi-view approaches
 - [ ] Compare to the joint NMF results
