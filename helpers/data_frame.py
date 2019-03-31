@@ -33,7 +33,8 @@ def extract_duplicates(data: DataFrame, duplicate_columns: List[str], index_colu
     if fill_na:
         data = data.fillna(fill_na)
     # pre-filter to operate only on duplicates
-    data = data[data.duplicated(keep=False)]
+    data = data[duplicate_columns + index_columns]
+    data = data[data.duplicated(keep=False, subset=duplicate_columns)]
     by_values = (
         data.reset_index()
         .groupby(duplicate_columns)
@@ -45,6 +46,17 @@ def extract_duplicates(data: DataFrame, duplicate_columns: List[str], index_colu
     some_index_column = by_values[index_columns[0]]
     df = by_values[some_index_column.apply(len) > 1].reset_index(drop=True)
     return explode_rows_with_lists(df)
+
+
+def set_duplicates_group(duplicates, group, other):
+    duplicates[group] = duplicates.merge(other)[group].values
+    duplicates = (
+        duplicates
+        .reset_index('group', drop=True)
+        .reset_index()
+        .set_index([group, 'index'])
+    )
+    return duplicates
 
 
 def to_underscore(data: Union[Index, List[str], Series], limit_to=None):
@@ -65,5 +77,10 @@ def to_lowercase(data: Union[Index, List[str], Series], limit_to=None):
     ]
 
 
-def select_columns(data, regexp):
-    return data[data.columns[data.columns.str.contains(regexp)]]
+def select_columns(data, match=None, exclude=None):
+    assert (match or exclude) and not (match and exclude)
+    regex = match or exclude
+    selection_vector = data.columns.str.contains(regex)
+    if exclude:
+        selection_vector = ~selection_vector
+    return data[data.columns[selection_vector]]
