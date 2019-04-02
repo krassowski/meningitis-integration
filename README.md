@@ -34,6 +34,12 @@ Use pip to install Python requirements:
 pip install -r requirements.txt
 ```
 
+To install R dependencies:
+
+```bash
+Rscript install.R
+```
+
 ### Version compatibility
 
 Developed and tested with Python 3.7.2 and R 3.5.1.
