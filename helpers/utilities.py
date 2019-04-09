@@ -18,14 +18,18 @@ import jupyter_helpers.rpy2_autocompletion
 from IPython.display import HTML
 from pandas import read_table, read_csv, read_excel, concat, Series, DataFrame
 import numpy as np
-# import seaborn as sns
-# from matplotlib import pyplot
-# from typing import Iterable
 from tqdm.auto import tqdm
 
 
 pd.options.display.max_rows = 10
 pd.options.display.max_columns = 10
+
+# enable stable sort by default to minimize diffs on notebooks
+DataFrame.sort_values.__defaults__ = tuple(
+    'mergesort' if default == 'quicksort' else default
+    for default in DataFrame.sort_values.__defaults__
+)
+
 
 show_table = display_table
 
