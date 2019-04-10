@@ -20,13 +20,16 @@ for future clinical use.
 
 ### Molecular dataset
 - [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](data_exploration/Molecular_data_extraction.ipynb))
-- [ ] Quality control (and maybe normalization) quantile-quantile plots (0.5 day)
-- [ ] Unsupervised exploration (PCA, hierarchical clustering) and correlations (1.5 days)
-
-Temporary notebook with both QC and unsupervised exploration: [Molecular_data_analysis](data_exploration/Molecular_data_analysis.ipynb) (works in progress!)
+- [ ] Quality control & transformations and maybe normalization) quantile-quantile plots
+  - [x] Protein data ([notebook](data_exploration/Protein_data_QC_and_transforms.ipynb))
+  - [ ] RNAseq data
+- [ ] Unsupervised exploration (PCA, hierarchical clustering) and correlations
+  - [x] Protein data ([notebook](data_exploration/Protein_data_unsupervised_analysis.ipynb))
+    - [x] [notes on PCA with prcomp and factoextra](data_exploration/Notes_on_PCA_with_prcomp_and_factoextra.ipynb) after the PCA discussion meeting
+  - [ ] RNAseq data ([notebook](data_exploration/RNAseq_data_unsupervised_analysis.ipynb))
 
 ### Clinical dataset
-- [x] Basic exploration: extraction, reformatting, sanity checks: ([notebook](data_exploration/Clinical_data_first_look.ipynb))
+- [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](data_exploration/Clinical_data_first_look.ipynb))
 - [ ] Derived variables (e.g. age, survival) and correlations (e.g. CD4) (0.25 day)
   - which clinical variables can be used as covariates, which should be used (or, can be considered as) outcomes
   - descriptive statistics to summarize characteristics of the studied cohort
