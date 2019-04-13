@@ -53,4 +53,4 @@ See [Differential_levels.ipynb](Differential_levels.ipynb).
   - though this would be overcomplicated...
 - there are protein data 15 out of 22 patients who deceased before the end of 6 month follow-up period
 
-See [Suvival.ipynb](Suvival.ipynb)
+See [Survival.ipynb](Survival.ipynb)
