@@ -47,7 +47,7 @@ I was aiming to chose techniques which are either established as standard in ana
   - [ ] for protein data ([notebook](analyses/protein_vs_clinical/Differential_levels.ipynb))
 - [ ] Survival analysis:
   - [ ] [clinical variables](analyses/Clinical_survival.ipynb),
-  - [ ] [protein levels](analyses/protein_vs_clinical/Survial.ipynb)
+  - [ ] [protein levels](analyses/protein_vs_clinical/Survival.ipynb)
 - [ ] Gene set enrichment analysis (GSEA) (1 day)
 - [ ] Multiple regressions/ANOVA using top DEGs (1 day)
 - [ ] Summary of findings:
