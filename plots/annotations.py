@@ -4,7 +4,8 @@ conditions_names = {
     'TMD': 'Tuberculosis',
     'TMR': 'Tuberculosis',
     'TMS': 'Tuberculosis',
-    'VM': 'Viral'
+    'VM': 'Viral',
+    'BM': 'Bacterial',  # no such patients for protein data, but there are some in general
 }
 
 tuberculosis_status = {

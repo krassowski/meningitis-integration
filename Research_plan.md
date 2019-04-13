@@ -14,13 +14,13 @@ integrate data from more than two blocks. Results from this work will form the b
 of infectious meningitides and understanding its pathogenesis. The ultimate aim is to derive signatures that can be validated in other trials and applicable
 for future clinical use.
 
-# TODO (DRAF!)
+# TODO
 
 ## Data exploration:
 
 ### Molecular dataset
 - [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](data_exploration/Molecular_data_extraction.ipynb))
-- [ ] Quality control & transformations and maybe normalization) quantile-quantile plots
+- [ ] Quality control & transformations quantile-quantile plots
   - [x] Protein data ([notebook](data_exploration/Protein_data_QC_and_transforms.ipynb))
   - [ ] RNAseq data
 - [ ] Unsupervised exploration (PCA, hierarchical clustering) and correlations
@@ -30,9 +30,11 @@ for future clinical use.
 
 ### Clinical dataset
 - [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](data_exploration/Clinical_data_first_look.ipynb))
-- [ ] Derived variables (e.g. age, survival) and correlations (e.g. CD4) (0.25 day)
-  - which clinical variables can be used as covariates, which should be used (or, can be considered as) outcomes
-  - descriptive statistics to summarize characteristics of the studied cohort
+- [ ] Derived variables (e.g. age, survival) and correlations (e.g. CD4) [notebook](analyses/Clinical_data.ipynb)
+  - [x] derived variables
+  - [x] which clinical variables can be used as covariates, which should be used (or, can be considered as) outcomes
+  - [ ] descriptive statistics to summarize characteristics of the studied cohort
+  - [ ] simple correlations
 
 ## Preliminary analyses
 
@@ -42,9 +44,15 @@ I was aiming to chose techniques which are either established as standard in ana
 ### Single omic
 - [ ] Differential expression (DE) (1 day)
   - [ ] for RNA-seq data (performed by Dr Rachel, though I will re-analyse and plot the data)
-  - [ ] for protein data
+  - [ ] for protein data ([notebook](analyses/protein_vs_clinical/Differential_levels.ipynb))
+- [ ] Survival analysis:
+  - [ ] [clinical variables](analyses/Clinical_survival.ipynb),
+  - [ ] [protein levels](analyses/protein_vs_clinical/Survial.ipynb)
 - [ ] Gene set enrichment analysis (GSEA) (1 day)
 - [ ] Multiple regressions/ANOVA using top DEGs (1 day)
+- [ ] Summary of findings:
+  - [ ] [protein data](analyses/protein_vs_clinical/README.md)
+  - [ ] RNA-seq
 
 I do not have a strong intuition on use of multiple regressions in this setting:
  - while the simpler approach would be to apply the model to all the variables and correct for multiple testing (MT),
