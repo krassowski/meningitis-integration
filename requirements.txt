@@ -12,3 +12,4 @@ matplotlib
 tzlocal
 inflection
 goatools
+nbimporter
