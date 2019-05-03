@@ -84,3 +84,15 @@ def select_columns(data, match=None, exclude=None):
     if exclude:
         selection_vector = ~selection_vector
     return data[data.columns[selection_vector]]
+
+
+def juxtapose_tables(a, b, suffixes, keep_index=False, only_keep=None):
+    if not keep_index:
+        a = a.reset_index(drop=True)
+        b = b.reset_index(drop=True)
+    if only_keep:
+        a = a[only_keep]
+        b = b[only_keep]
+    df = a.join(b, lsuffix='|' + suffixes[0], rsuffix='|' + suffixes[1])
+    df.columns = df.columns.map(lambda x: tuple(reversed(x.split('|'))))
+    return df

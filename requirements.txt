@@ -13,3 +13,4 @@ tzlocal
 inflection
 goatools
 nbimporter
+gprofiler-official

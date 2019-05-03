@@ -20,7 +20,7 @@ def show_list(data, mode='bullet'):
     return HTML(output)
 
 
-def compare_sets(a, b):
+def compare_sets(a, b, percentage=None):
     a = set(a)
     b = set(b)
 
@@ -35,13 +35,20 @@ def compare_sets(a, b):
                 difference_text = difference
             else:
                 dl = list(difference)
+                total_diff = len(difference)
+
+                if percentage:
+                    total = len(a.union(b))
+                    total_diff = f'{total_diff} ({total_diff / total * 100:.2f}%)'
+
                 difference_text = (
                     '{'
                         + ', '.join(dl[:3])
                         + ', ..., '
                         + ', '.join(dl[-3:])
-                    + '}' + f', {len(difference)} in total'
+                    + '}' + f', {total_diff} in total'
                 )
+
             out += [f'The {"first" if i == 0 else "second"} set has additional elements: {difference_text}']
 
     if a == b:
