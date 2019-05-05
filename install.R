@@ -7,6 +7,9 @@ install.packages('ggthemes')
 install.packages('limma')
 install.packages('statmod')
 
+install.packages('parallel')
+#install.packages('pbmcapply')
+
 install.packages('import')
 
 source("https://bioconductor.org/biocLite.R")
