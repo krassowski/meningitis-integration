@@ -28,6 +28,8 @@ annotate_significance_thresholds = function(alpha, alpha_suggestive, transform=N
 }
 
 volcano_plot = function(data, facet=F, n=15, select=select_n_most_significant, significant_only=T, scale='fixed') {
+    # set seed to increase labels positions reproducibility
+    set.seed(0)
     data$is_significant = ifelse(data$adj.P.Val < 0.05, 'significant', 'non-significant')
     significant = data[data$is_significant=='significant',]
     
@@ -69,5 +71,7 @@ volcano_plot = function(data, facet=F, n=15, select=select_n_most_significant, s
     if(facet != F) {
         g = g + facet_wrap(facet, scale=scale)
     }
+    # disable sed
+    rm(.Random.seed, envir=globalenv())
     g
 }
