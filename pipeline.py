@@ -227,7 +227,7 @@ NotebookRule(
         indexed_by_target_path = 'data/clean/protein/indexed_by_target.csv',
         clinical_path = 'data/clean/protein/clinical_data_ordered_to_match_proteins_matrix.csv',
         log_matrix_path = 'data/clean/protein/log_10.csv',
-        **proteins_mapped_to_genes.output
+        **proteins_mapped_to_genes.outputs
     ),
     group='Proteomics'
 )
