@@ -18,7 +18,7 @@ The generic helpers are stored in [helpers](helpers) directory, regardless of th
 
 #### Automation for reproducibility
 
-The order of execution of each of the notebooks and scripts is described by the Snakemake workflow in the [Snakemake](Snakemake) file.
+The order of execution of each of the notebooks and scripts is described by the Snakemake-like workflow in the [pipeline.py](pipeline.py) file.
 Following a three-commands installation:
 
 ```bash
@@ -35,6 +35,7 @@ cd meningitis-integration
 Execute nbpipline to reproduce all results of our study with:
 
 ```bash
+# -i will generate an interactive graph featuring reproducibility reports
 nbpipline pipeline.py -i
 ```
 
