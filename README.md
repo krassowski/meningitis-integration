@@ -49,8 +49,21 @@ For the list of conducted and planned analyses, please see the [Research_plan.md
 
 #### The analyses plot
 
+For interactive plot use:
 ```bash
-snakemake --rulegraph a_b.txt | dot -Tpng > rulegraph.png
+nbpipline pipeline.py -i
+```
+
+For static SVG plot use:
+```bash
+nbpipline pipeline.py -g
+```
+
+You can also append `-n` switch witch will skip execution of the pipeline and generate minimal plots (without reproducibility reports and code analysis):
+
+For static SVG plot use:
+```bash
+nbpipline pipeline.py -g -n
 ```
 
 ### Version compatibility
