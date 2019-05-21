@@ -71,7 +71,7 @@ volcano_plot = function(data, facet=F, n=15, select=select_n_most_significant, s
     if(facet != F) {
         g = g + facet_wrap(facet, scale=scale)
     }
-    # disable sed
-    rm(.Random.seed, envir=globalenv())
+    # disable seed
+    # rm(.Random.seed, envir=globalenv())
     g
 }

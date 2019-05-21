@@ -38,10 +38,10 @@ limma_fit = function(data, conditions_vector, a, b, use_all=T) {
         # I will just look at the results of both scenarios (and conclude that further reading is needed if the
         # results differ or that the difference is negligible if the difference is negligible) 
         
-        design = design_from_conditions(conditions_vector)
-        fit = calculate_means(data, design)
+        design <- design_from_conditions(conditions_vector)
+        fit <- calculate_means(data, design)
 
-        contrast_specification = paste(
+        contrast_specification <- paste(
             space_to_dot(a),
             space_to_dot(b),
             sep='-'
@@ -49,16 +49,16 @@ limma_fit = function(data, conditions_vector, a, b, use_all=T) {
         contrast.matrix <- limma::makeContrasts(contrasts=contrast_specification, levels=design)
         fit <- limma::contrasts.fit(fit, contrast.matrix)        
     } else {
-        considered = cbind(
+        considered <- cbind(
             data[conditions_vector == a],
             data[conditions_vector == b]
         )
-        a_cnt = sum(conditions_vector == a)
-        b_cnt = sum(conditions_vector == b)
-        groups = c(rep(1, a_cnt), rep(0, b_cnt))
-        design = cbind(Intercept=1, Group=groups)
+        a_cnt <- sum(conditions_vector == a)
+        b_cnt <- sum(conditions_vector == b)
+        groups <- c(rep(1, a_cnt), rep(0, b_cnt))
+        design <- cbind(Intercept=1, Group=groups)
 
-        fit = limma::lmFit(considered, design)
+        fit <- limma::lmFit(considered, design)
     }
     fit
 }

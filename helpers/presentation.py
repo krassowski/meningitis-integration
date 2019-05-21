@@ -34,7 +34,7 @@ def compare_sets(a, b, percentage=None):
             if len(difference) < 10:
                 difference_text = difference
             else:
-                dl = list(difference)
+                dl = sorted(difference)
                 total_diff = len(difference)
 
                 if percentage:
