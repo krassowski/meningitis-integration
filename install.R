@@ -14,3 +14,4 @@ install.packages('import')
 
 source("https://bioconductor.org/biocLite.R")
 biocLite("readat")
+install.packages('gprofiler2')

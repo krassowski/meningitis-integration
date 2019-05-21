@@ -12,6 +12,9 @@ class ProteinOntologyClassifier:
         def classifier(uniprot):
             processes = set()
             for go in self.associations[uniprot]:
+                if go not in self.ontology:
+                    print('skipping ' + go)
+                    continue
                 all_parents = self.ontology[go].get_all_parents()
                 for parent in all_parents:
                     parent = self.ontology[parent]
