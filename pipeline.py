@@ -222,12 +222,48 @@ NotebookRule(
 
 NotebookRule(
     'Differential abundance of proteins',
-    notebook='analyses/protein_vs_clinical/Differential_levels.ipynb',
+    notebook='analyses/protein_vs_clinical/Differential_levels_and_ORA.ipynb',
     input=dict(
         indexed_by_target_path = 'data/clean/protein/indexed_by_target.csv',
         clinical_path = 'data/clean/protein/clinical_data_ordered_to_match_proteins_matrix.csv',
         log_matrix_path = 'data/clean/protein/log_10.csv',
         **proteins_mapped_to_genes.outputs
+    ),
+    output={
+        **{
+            f'out_{subset}': f'data/preliminary_analyses/differential_protein_levels/{subset}.csv'
+            for subset in ['tbm', 'crypto', 'viral']
+        },
+        **{
+            'out_log_matrix_filtered_path': 'data/clean/protein/log_10_filtered.csv'
+
+        }
+    },
+    group='Proteomics'
+)
+
+
+NotebookRule(
+    'GSEA for proteins',
+    notebook='analyses/protein_vs_clinical/GSEA.ipynb',
+    input=dict(
+        indexed_by_target_path = 'data/clean/protein/indexed_by_target.csv',
+        clinical_path = 'data/clean/protein/clinical_data_ordered_to_match_proteins_matrix.csv',
+        log_matrix_path = 'data/clean/protein/log_10.csv',
+        out_log_matrix_filtered_path = 'data/clean/protein/log_10_filtered.csv',
+        **proteins_mapped_to_genes.outputs
+    ),
+    group='Proteomics'
+)
+
+
+
+NotebookRule(
+    'Notes: Limma expects log-transformed data ',
+    notebook='analyses/notes/Limma_expects_log_transformed_data.ipynb',
+    input=dict(
+        indexed_by_target_path = 'data/clean/protein/indexed_by_target.csv',
+clinical_path = 'data/clean/protein/clinical_data_ordered_to_match_proteins_matrix.csv'
     ),
     group='Proteomics'
 )

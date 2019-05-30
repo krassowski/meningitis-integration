@@ -22,7 +22,11 @@ calculate_means = function(data, design) {
     fit
 }
 
-limma_fit = function(data, conditions_vector, a, b, use_all=T) {
+limma_fit = function(data, conditions_vector, a, b, use_all=T, workaround_for_non_transformed_data=F) {
+
+    if(workaround_for_non_transformed_data == T && use_all != T)
+        stop('the workaround is only supported when using the full data')
+
     if(use_all) {
         # in this scenario I benefit from the additional information about the distribution of protein abundances from other conditions;
         # this might or might not be desirable, however https://support.bioconductor.org/p/73107/ indicates that this is usually beneficial, unless:
@@ -47,7 +51,8 @@ limma_fit = function(data, conditions_vector, a, b, use_all=T) {
             sep='-'
         )
         contrast.matrix <- limma::makeContrasts(contrasts=contrast_specification, levels=design)
-        fit <- limma::contrasts.fit(fit, contrast.matrix)        
+        #fit <- limma::contrasts.fit(fit, contrast.matrix)
+        fit = contrasts_fit(fit, contrast.matrix, divide=workaround_for_non_transformed_data)
     } else {
         considered <- cbind(
             data[conditions_vector == a],
@@ -61,4 +66,36 @@ limma_fit = function(data, conditions_vector, a, b, use_all=T) {
         fit <- limma::lmFit(considered, design)
     }
     fit
+}
+
+
+limma_diff_ebayes <- function(a, b, ...){
+    fit = limma_fit(a=a, b=b, ...)
+    limma::eBayes(fit, trend=T, robust=T)
+}
+
+full_table <- function(e_bayes_result, coef=1){    
+    table = limma::topTable(e_bayes_result, coef=coef, number=Inf)
+    table$protein = rownames(table)
+    table
+}
+
+
+contrasts_fit = function(fit, contrast.matrix, divide, ...) {
+    if (divide == F) {
+        diff_fit <- limma::contrasts.fit(fit, contrast.matrix)
+    } else {
+        print("
+            see notes/Limma_expects_log_transformed_data.ipynb
+            NOTE: this is just to indicate how using non log-transformed data works
+            and that it is wrong; the results of divide=T were not validated
+            and are not expected to be full correct but rather to be used as
+            a demenstration of the log-transformation impact and where the issue lies.
+        ")
+        diff_fit <- limma::contrasts.fit(fit, contrast.matrix)
+        a = rownames(contrast.matrix[contrast.matrix == 1,, drop=F])
+        b = rownames(contrast.matrix[contrast.matrix == -1,, drop=F])
+        diff_fit$coefficients = fit$coefficients[,a] / fit$coefficients[,b]
+    }
+    diff_fit
 }
