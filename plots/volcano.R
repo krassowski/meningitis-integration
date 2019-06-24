@@ -27,10 +27,15 @@ annotate_significance_thresholds = function(alpha, alpha_suggestive, transform=N
     )
 }
 
-volcano_plot = function(data, facet=F, n=15, select=select_n_most_significant, significant_only=T, scale='fixed') {
+volcano_plot = function(data, facet=F, n=15, select=select_n_most_significant, significant_only=T, scale='fixed', sig_threshold=0.05, transparency=0.4) {
+    
+    if (is.null(data$protein))
+        data$protein = data$gene_name
+    #data$protein = rownames(data))
+    
     # set seed to increase labels positions reproducibility
     set.seed(0)
-    data$is_significant = ifelse(data$adj.P.Val < 0.05, 'significant', 'non-significant')
+    data$is_significant = ifelse(data$adj.P.Val < sig_threshold, 'significant', 'non-significant')
     significant = data[data$is_significant=='significant',]
     
     select_n_top <- function(x) { select(x, n=n) }
@@ -53,12 +58,12 @@ volcano_plot = function(data, facet=F, n=15, select=select_n_most_significant, s
     g = (
         ggplot(data, aes(x=logFC, y=-log10(adj.P.Val), color=is_significant))
         + theme_bw()
-        + geom_point(alpha=0.4)
+        + geom_point(alpha=transparency)
         + scale_color_manual(
             name='',
             values=c('significant'='red', 'non-significant'='black')
         )
-        + ggrepel::geom_text_repel(
+        + ggrepel::geom_label_repel(
             data=selected_proteins,
             aes(label=protein),
             show.legend=F,
