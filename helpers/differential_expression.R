@@ -106,7 +106,7 @@ contrasts_fit = function(fit, contrast.matrix, divide, ...) {
 
 
 extract_counts = function(counts) {
-    # TODO: warn about unamtched class?
+    # TODO: warn about unmatched class?
     #  or maybe rename to "extract_counts_if_needed"
     if (class(counts) == 'DESeqDataSet')
         counts = as.data.frame(DESeq2::counts(counts, normalized=TRUE))
@@ -115,4 +115,14 @@ extract_counts = function(counts) {
         counts = edgeR::cpm(counts)
 
     counts
+}
+
+
+filter_out_low_expression = function(dge, conditions_vector) {
+    design <- design_from_conditions(conditions_vector)
+    counts_condition <- length(rownames(dge))
+    keep <- edgeR::filterByExpr(dge, design)
+    ratio <- sum(keep) / length(rownames(dge)) * 100
+    print(paste0('Retaining: ', round(ratio, 2), '%'))
+    dge[keep,,keep.lib.sizes=FALSE]
 }
