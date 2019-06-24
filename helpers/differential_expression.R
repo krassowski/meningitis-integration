@@ -1,7 +1,7 @@
 import::here(space_to_dot, dot_to_space, .from='utilities.R')
 
 
-design_from_conditions = function(conditions, intercept=F) {
+design_from_conditions = function(conditions, intercept=T) {
 
     # "The levels must by syntactically valid names in R"
     conditions = space_to_dot(conditions)
@@ -11,7 +11,9 @@ design_from_conditions = function(conditions, intercept=F) {
         groups = relevel(groups, ref=intercept)
         design = model.matrix(~ groups)
     } else {
-        design = model.matrix(~ 0 + groups)
+        # note: use of no-intercept mode matrix was causing issues for voom, see:
+        # https://support.bioconductor.org/p/57631/
+        design = model.matrix(~ groups)
     }
     colnames(design) = gsub('groups', '', colnames(design))
     design
@@ -22,7 +24,7 @@ calculate_means = function(data, design) {
     fit
 }
 
-limma_fit = function(data, conditions_vector, a, b, use_all=T, workaround_for_non_transformed_data=F) {
+limma_fit = function(data, conditions_vector, a, b, use_all=T, workaround_for_non_transformed_data=F, intercept=T) {
 
     if(workaround_for_non_transformed_data == T && use_all != T)
         stop('the workaround is only supported when using the full data')
@@ -42,7 +44,7 @@ limma_fit = function(data, conditions_vector, a, b, use_all=T, workaround_for_no
         # I will just look at the results of both scenarios (and conclude that further reading is needed if the
         # results differ or that the difference is negligible if the difference is negligible) 
         
-        design <- design_from_conditions(conditions_vector)
+        design <- design_from_conditions(conditions_vector, intercept=intercept)
         fit <- calculate_means(data, design)
 
         contrast_specification <- paste(
@@ -54,13 +56,15 @@ limma_fit = function(data, conditions_vector, a, b, use_all=T, workaround_for_no
         #fit <- limma::contrasts.fit(fit, contrast.matrix)
         fit = contrasts_fit(fit, contrast.matrix, divide=workaround_for_non_transformed_data)
     } else {
+        # TODO test change below against protein diff expr notebook
+        print(class(data))
         considered <- cbind(
-            data[conditions_vector == a],
-            data[conditions_vector == b]
+            data[,conditions_vector == a],
+            data[,conditions_vector == b]
         )
         a_cnt <- sum(conditions_vector == a)
         b_cnt <- sum(conditions_vector == b)
-        groups <- c(rep(1, a_cnt), rep(0, b_cnt))
+        groups <- c(rep(1, a_cnt), rep(-1, b_cnt))
         design <- cbind(Intercept=1, Group=groups)
 
         fit <- limma::lmFit(considered, design)
@@ -98,4 +102,16 @@ contrasts_fit = function(fit, contrast.matrix, divide, ...) {
         diff_fit$coefficients = fit$coefficients[,a] / fit$coefficients[,b]
     }
     diff_fit
+}
+
+
+extract_counts = function(counts) {
+
+    if (class(counts) == 'DESeqDataSet')
+        counts = as.data.frame(DESeq2::counts(counts, normalized=TRUE))
+
+    if (class(counts) == 'DGEList')
+        counts = edgeR::cpm(counts)
+
+    counts
 }
