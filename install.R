@@ -17,7 +17,6 @@ biocLite("readat")
 install.packages('gprofiler2')
 
 
-
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 

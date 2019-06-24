@@ -267,3 +267,29 @@ clinical_path = 'data/clean/protein/clinical_data_ordered_to_match_proteins_matr
     ),
     group='Proteomics'
 )
+
+# TODO:
+NotebookRule(
+    'Differential expression',
+    notebook='analyses/rnaseq_vs_clinical/Differential_expression.ipynb',
+    group='RNA'
+)
+
+NotebookRule(
+    'Subset clinical data for transcriptomic analyses',
+    notebook='analyses/rnaseq_vs_clinical/Subset_clinical_data.ipynb',
+    group='RNA'
+)
+
+NotebookRule(
+    'RNAseq sanity checks',
+    notebook='analyses/rnaseq_vs_clinical/RNAseq_sanity_checks.ipynb',
+    group='RNA'
+)
+
+
+NotebookRule(
+    'Limma_vs_DESeq2.ipynb',
+    notebook='analyses/rnaseq_vs_clinical/Limma_vs_DESeq2.ipynb',
+    group='RNA'
+)
