@@ -19,7 +19,9 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
     if (!is.null(limit_to))
         annotations = annotations[limit_to,]
     
-    if(length(unique(annotations['Tuberculosis status'])) > 1) {
+    include_tb_status = nrow(unique(annotations['Tuberculosis status'])) > 1
+    
+    if(include_tb_status) {
         clinical_annotation = ComplexHeatmap::HeatmapAnnotation(
             'HIV status'=annotations[,'HIV status'],
             'Tuberculosis status'=ComplexHeatmap::anno_simple(
@@ -49,7 +51,7 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
     }
     
     legends = list()
-    if(length(unique(annotations['Tuberculosis status'])) > 1) {
+    if(include_tb_status) {
         status_legend = ComplexHeatmap::Legend(
             title="Tuberculosis status",
             legend_gp = grid::gpar(
