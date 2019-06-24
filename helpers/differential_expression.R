@@ -106,7 +106,8 @@ contrasts_fit = function(fit, contrast.matrix, divide, ...) {
 
 
 extract_counts = function(counts) {
-
+    # TODO: warn about unamtched class?
+    #  or maybe rename to "extract_counts_if_needed"
     if (class(counts) == 'DESeqDataSet')
         counts = as.data.frame(DESeq2::counts(counts, normalized=TRUE))
 
