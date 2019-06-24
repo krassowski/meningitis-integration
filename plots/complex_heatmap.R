@@ -72,7 +72,7 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
 
 
 signif_thresholds = c(0, 0.001, 0.01, 0.05, 0.1, 1)
-signif_codes = c("***", "**", "*", "'", " ") # using ' instead of a dot as this is in the same line as *
+signif_codes = c("\U2042", "\U2051", "\U204E", "\U26AC", " ")
         
 convert_signif_codes = function(pvalues) {
     # extracted from base R, see https://stackoverflow.com/a/41263378/6646912
@@ -84,7 +84,7 @@ convert_signif_codes = function(pvalues) {
 }
 
 # annotations for use in ComplexHeatmap
-annotate_pvclust = function(x, n, mapper=convert_signif_codes, col='red') {
+annotate_pvclust = function(x, n, mapper=convert_signif_codes, col='red', size=20, ...) {
     
     n = nobs(as.dendrogram(x$hclust))
     # Based on text.pvclust
@@ -94,11 +94,12 @@ annotate_pvclust = function(x, n, mapper=convert_signif_codes, col='red') {
     usr  <- par()$usr; wid <- usr[4] - usr[3]
     mapped = mapper(1 - x$edges[,"au"])
     au <- as.character(mapped)
+    
     a <- grid.text(
         x=(axes[,1]-0.5)/n,
-        y=axes[,2]/max(axes[,2]) + 0.01,
+        y=axes[,2]/max(axes[,2]) + 0.075,
         au,
-        gp=gpar(col=col, fontsize=20)
+        gp=gpar(col=col, fontsize=size, ...)
     )
     mapped
 }
@@ -115,16 +116,6 @@ pheatmap_palette = function(mat) {
     )
 }
 
-pheatmap_palette_with_zero = function(mat) {
-    
-    max_abs = max(abs(mat))
-    
-    circlize::colorRamp2(
-        c(-max_abs, 0, max_abs),
-        # TODO this is from  - add formal attribution?
-        rev(c("#D73027", "#FFFFBF", "#4575B4"))
-    )
-}
 
 pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
     
@@ -194,6 +185,9 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
             # see https://support.bioconductor.org/p/95294/#95318
             tree = ComplexHeatmap::column_dend(ht_lista)
 
+            # backdrop
+            annotate_pvclust(samples_clustering, col='white', size=26, alpha=0.5)
+            annotate_pvclust(samples_clustering, col='white', size=22, alpha=0.5)
             mapped = annotate_pvclust(samples_clustering)
 
             h_samples = samples_clustering$hclust
