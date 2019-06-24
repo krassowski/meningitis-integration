@@ -207,3 +207,18 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
             # maybe TODO: add rects for clusters
         }, envir = as.environment(1L))
 }
+
+
+compose_title = function(main, major, minor, latex=T) {
+    if(is.null(main) & (!is.null(major))) {
+        main = paste0(
+            '\\overset{',
+            major,
+            '}{\\small{',
+            minor,
+            '}}'
+        )
+    }
+    main = latex2exp::TeX(main)
+    main
+}
