@@ -1,4 +1,6 @@
 library(RColorBrewer)
+library(ggplot2)
+nice_theme = list(theme_bw(), theme(legend.position='bottom'))
 
 patient_colors <- list(
     'HIV status'=brewer.pal(2, "Set3")[1:2],
