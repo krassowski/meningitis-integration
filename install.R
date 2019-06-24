@@ -28,7 +28,6 @@ BiocManager::install("IHW")
 install.packages('devtools')
 Sys.unsetenv("GITHUB_PAT")
 
-devtools::install_github('thomasp85/hierarchicalSets')
 # Bioc version is too old, 2.1.0 required
 # BiocManager::install("ComplexHeatmap")
 devtools::install_github("jokergoo/ComplexHeatmap")
