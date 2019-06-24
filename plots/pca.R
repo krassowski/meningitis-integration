@@ -60,3 +60,22 @@ cumulative_variance_explained <- function(data, threshold){
         + xlab('Prinicpal component') + ylab('Cumulative variance explained [%]')
     )
 }
+
+
+plot_pca_with = function(pca, key, func=fviz_pca_ind, data=normalized_form, ...){
+    # TODO: rewrite using grids::ggplot_columns_grid
+    plot = fviz_pca_ind(pca, geom='point', col.ind=data[[key]])
+    legend = cowplot::get_legend(plot + theme(legend.position='top') + guides(color=guide_legend(title=key)))
+    plots = list()
+    for(i in seq(1, 9))
+       plots[[i]] = (
+           # TODO: geom?
+           func(pca, geom='point', axes=c(i, i+1), col.ind=data[[key]], ...)
+           + theme(legend.position='none')
+       )
+    gridExtra::grid.arrange(
+        legend,
+        gridExtra::arrangeGrob(grobs = plots, ncol=3),
+        heights=c(1, 10), nrow=2
+    )
+}
