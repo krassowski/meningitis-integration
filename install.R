@@ -15,3 +15,22 @@ install.packages('import')
 source("https://bioconductor.org/biocLite.R")
 biocLite("readat")
 install.packages('gprofiler2')
+
+
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+install.packages('corrplot')
+BiocManager::install("IHW")
+
+install.packages('devtools')
+Sys.unsetenv("GITHUB_PAT")
+
+devtools::install_github('thomasp85/hierarchicalSets')
+# Bioc version is too old, 2.1.0 required
+# BiocManager::install("ComplexHeatmap")
+devtools::install_github("jokergoo/ComplexHeatmap")
+
+install.packages("pvclust")
