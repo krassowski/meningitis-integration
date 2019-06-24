@@ -53,3 +53,17 @@ top_level = Path(__file__).parent.parent
 # always use the same, absolute paths - which makes
 # moving the notebooks around easier in the future
 chdir(top_level)
+
+
+class Dummy:
+    def __getattr__(self, key):
+        return
+
+dummy = Dummy()
+
+def get_or_dummy(callback, *args, **kwargs):
+    try:
+        return callback(*args, **kwargs)
+    except ValueError:
+        return dummy
+
