@@ -14,6 +14,10 @@ names_maybe_row = function(df, new_names, row) {
 # assumes that rownames of source are Ensembl Gene ID, will assign new ids to target;
 # target and source have to be aligned!
 replace_ids = function(target, source, convert_to='symbol') {
+
+    if(is.null(convert_to))
+        return (target)
+
     allowed_values = c('entrez', 'symbol')
     
     if (!convert_to %in% allowed_values)
