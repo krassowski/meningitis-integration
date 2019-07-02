@@ -15,6 +15,12 @@ symbol_for_tb_status = function (statuses) {
     ))
 }
 
+
+max_text_width = function(names) {
+    unit(10 * max(nchar(names)), 'mm')
+}
+
+
 simple_clinical_annotation = function(annotations, limit_to=NULL) {
     if (!is.null(limit_to))
         annotations = annotations[limit_to,]
@@ -95,11 +101,11 @@ annotate_pvclust = function(x, n, mapper=convert_signif_codes, col='red', size=2
     mapped = mapper(1 - x$edges[,"au"])
     au <- as.character(mapped)
     
-    a <- grid.text(
+    a <- grid::grid.text(
         x=(axes[,1]-0.5)/n,
         y=axes[,2]/max(axes[,2]) + 0.075,
         au,
-        gp=gpar(col=col, fontsize=size, ...)
+        gp=grid::gpar(col=col, fontsize=size, ...)
     )
     mapped
 }
@@ -118,7 +124,7 @@ pheatmap_palette = function(mat) {
 
 
 pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
-    
+
     patients_with_rnaseq = colnames(counts_collapsed)
 
     clinical_annotations = simple_clinical_annotation(
@@ -139,7 +145,7 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
         mat,
         name=name,
         column_title = title,
-        column_title_gp = gpar(fontsize = 20, fontface = "bold"),
+        column_title_gp = grid::gpar(fontsize = 20, fontface = "bold"),
         cluster_columns=cluster_columns,
         clustering_distance_rows='pearson',
         column_dend_reorder = FALSE,

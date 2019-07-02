@@ -187,11 +187,40 @@ names_for_pathway_clusters = function(
         ranking = ranking[order(ranking$FDR), ]
 
         is_uncertain_cluster = FALSE
+        consistency = 1
         
         if(length(unique(ranking$Direction)) > 1) {
-            print('Pathways with inconsistent effect in the cluster:')
-            print(ranking)
-            is_uncertain_cluster= TRUE
+            up = ranking[ranking$Direction == 'Up',]
+            down = ranking[ranking$Direction == 'Down',]
+            
+            for(i in 1:nrow(ranking)) {
+                if(length(unique(head(ranking, i)$Direction)) > 1)
+                    break
+            }
+            consistent_until = i
+
+            if (head(ranking, 1)$Direction == 'Up') {
+                consistency = mean(ranking$Direction == 'Up')
+                inconsistent_pathways = ranking[ranking$Direction == 'Down',]
+            } else {
+                consistency = mean(ranking$Direction == 'Down')
+                inconsistent_pathways =  ranking[ranking$Direction == 'Up',]
+            }
+            
+            print(
+                paste0(
+                    'Cluster not fully consistent; consistent until ',
+                    consistent_until,
+                    ' position in the FDR-based ranking (',
+                    round(100 * consistent_until / nrow(ranking), 2),
+                    '%); consistency = ', round(100 * consistency, 2), '%'))
+
+            print('Top 3 pathways in the inconsistent cluster:')
+            print(head(ranking, 3))
+            print('Top 3 inconsistent pathways:')
+            print(head(inconsistent_pathways, 3))
+
+            is_uncertain_cluster = TRUE
         }
 
         for (i in 2:nrow(conditions)) {
@@ -288,7 +317,7 @@ names_for_pathway_clusters = function(
         }
 
         if (is_uncertain_cluster)
-            cluster_name = paste(cluster_name, ' [inconsistent cluster]')
+            cluster_name = paste0(cluster_name, ' [up/down consistency ' , round(100 * consistency, 2), '%]')
 
         # TODO maybe show the most common words occuring?
         cluster_names[[length(cluster_names) + 1]] = cluster_name
