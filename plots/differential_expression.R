@@ -2,12 +2,13 @@ import::here(extract_counts, .from='../helpers/differential_expression.R')
 import::here(counts_to_pathways_space, .from='../helpers/pathways.R')
 import::here(pvclust_heatmap, simple_clinical_annotation, .from='complex_heatmap.R')
 import::here(space_to_dot, dot_to_space, remove_leading_X, .from='../helpers/utilities.R')
-
+ 
 
 significant.limma = function(dds_result, alpha=0.05) {
     g = dds_result[complete.cases(dds_result),]
     g[g$adj.P.Val < alpha,]
 }
+
 
 significant.deseq = function(dds_result, alpha=0.05) {
     g = dds_result[complete.cases(dds_result),]

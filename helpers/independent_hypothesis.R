@@ -38,12 +38,12 @@ library("IHW")
 
 weight_by_mean_expression = function(table, fdr_threshold=0.05, expression_col='AveExpr', pvalue_col='P.Value') {
     formula = as.formula(paste(pvalue_col, '~', expression_col))
-    ihw_res <- ihw(formula, data=table, alpha=fdr_threshold)
+    ihw_res <- IHW::ihw(formula, data=table, alpha=fdr_threshold)
     ihw_res
 }
 
 add_p_value_for_weighted_hypothesis = function(data, ...) {
     data$unweighted.adj.P.Val = data$adj.P.Val
-    data$adj.P.Val = adj_pvalues(weight_by_mean_expression(data, ...))
+    data$adj.P.Val = IHW::adj_pvalues(weight_by_mean_expression(data, ...))
     data
 }
