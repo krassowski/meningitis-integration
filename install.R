@@ -32,3 +32,7 @@ Sys.unsetenv("GITHUB_PAT")
 devtools::install_github("jokergoo/ComplexHeatmap")
 
 install.packages("pvclust")
+install.packages("ggstatsplot")
+
+BiocManager::install("mixOmics")
+BiocManager::install("ropls")

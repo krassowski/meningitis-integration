@@ -17,3 +17,8 @@ patient_colors_values <- list(
 for(group in names(patient_colors)) {
     names(patient_colors[[group]]) <- patient_colors_values[[group]]
 }
+
+
+
+color_meningitis = list(scale_color_manual(values=patient_colors$Meningitis))
+fill_meningitis = list(scale_fill_manual(values=patient_colors$Meningitis))

@@ -31,6 +31,8 @@ def collection_to_R(collection, trim_to, min=5, max=500):
             # limma::mroast seems to work fine (and be more aware of the limitted statistical support)
             .subset(gene_ids)
             .gene_sets
+            
+            if gene_ids else collection.gene_sets
         )
         if max > len(gene_set.genes) > min
     }

@@ -1,4 +1,5 @@
 import::here(deseq2_prevent_aggressive_filtering, .from='thirdparty.R')
+library('genefilter')
 
 # Note: Deseq2 uses alpha=0.1 by default
 filter_by_mean_expression = function(table, fdr_threshold=0.05, step=0.005, expression_col='AveExpr', pvalue_col='P.Value', show_plot=T, use_deseq2_method=F) {
