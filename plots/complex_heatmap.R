@@ -128,6 +128,7 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
     patients_with_rnaseq = colnames(counts_collapsed)
 
     clinical_annotations = simple_clinical_annotation(
+        # TODO this should be passed as an argument, not taken from the env
         counts_patient_annotations, limit_to=patients_with_rnaseq
     )
 
@@ -219,6 +220,7 @@ compose_title = function(main, major, minor, latex=T) {
             '}}'
         )
     }
-    main = latex2exp::TeX(main)
+    if (latex)
+        main = latex2exp::TeX(main)
     main
 }
