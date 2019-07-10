@@ -20,7 +20,7 @@ from IPython.display import HTML
 from pandas import read_table, read_csv, read_excel, concat, Series, DataFrame
 import numpy as np
 from tqdm.auto import tqdm
-
+from nbpipeline.io import create_paths, save_outputs, load_inputs
 
 pd.options.display.max_rows = 10
 pd.options.display.max_columns = 10
@@ -67,3 +67,23 @@ def get_or_dummy(callback, *args, **kwargs):
     except ValueError:
         return dummy
 
+    
+load_inputs = partial(
+    load_inputs,
+    main_loader=partial(read_csv, index_col=0)
+)
+
+
+def display_heads(frames, n_rows=4):
+    for name, df in frames.items():
+        display(HTML(f'<code>{name}</code>'))
+        display_table(df, n_rows=n_rows, n_cols=4)
+
+
+def load_and_display_inputs(namespace, **kwargs):
+    return display_heads(
+        load_inputs(
+            namespace,
+            **kwargs
+        )
+    )
