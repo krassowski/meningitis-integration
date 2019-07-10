@@ -4,7 +4,8 @@ from typing import NamedTuple, Dict, Type
 
 import numpy as np
 from pandas import DataFrame, concat
-from tqdm.auto import tqdm
+from multiprocess import Pool
+
 
 from .permutations import (
     CorrelationsPermuter, PermuterKeepingOmicsAndPhenotypes,
@@ -62,6 +63,14 @@ class ComparativeCorrelations(NamedTuple):
             index=rna.index
         )
 
+    def random_permutation(self, i, permuter, metric):
+        permutation = permuter.permute()
+
+        correlations_tb = self._fast_correlation(permutation.tb_rna, permutation.tb_protein)
+        correlations_cm = self._fast_correlation(permutation.cm_rna, permutation.cm_protein)
+
+        return metric(correlations_cm, correlations_tb)
+
     def compute_null_distribution(self, metric, constraint, n):
 
         assert constraint in self.permutation_constraints
@@ -76,17 +85,7 @@ class ComparativeCorrelations(NamedTuple):
             genes_in_both=self.genes_in_both
         )
 
-        null = []
-
-        for _ in tqdm(range(n)):
-
-            permutation = permuter.permute()
-
-            correlations_tb = self._fast_correlation(permutation.tb_rna, permutation.tb_protein)
-            correlations_cm = self._fast_correlation(permutation.cm_rna, permutation.cm_protein)
-
-            null.append(
-                metric(correlations_cm, correlations_tb)
-            )
+        pool = Pool()
+        null = pool.imap(self.random_permutation, range(n), shared_args=(permuter, metric), total=n)
 
         return concat(null, axis=1)
