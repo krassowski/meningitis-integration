@@ -48,6 +48,9 @@ class ComparativeCorrelations(NamedTuple):
             if not all(patients_with_enough_rna):
                 p = p[rna_to_protein_order[patients_with_enough_rna]]
                 r = r[patients_with_enough_rna]
+            else:
+                # reorder to rna patients (all are true)
+                p = p[rna_to_protein_order[patients_with_enough_rna]]
             cor = method(r, p)
             return cor[0], cor[1], len(r)
 
