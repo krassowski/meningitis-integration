@@ -4,7 +4,7 @@ from typing import NamedTuple, Dict, Type
 
 import numpy as np
 from pandas import DataFrame, concat
-from multiprocess import Pool
+from enhanced_multiprocessing import Pool
 
 
 from .permutations import (
