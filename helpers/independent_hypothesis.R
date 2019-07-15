@@ -35,10 +35,11 @@ add_p_value_for_filtered_subset = function(data, ...) {
 library("IHW")
 # https://www.bioconductor.org/help/course-materials/2016/CSAMA/lab-6-hypothesis-weighting/introduction_to_ihw.html
 # https://bioconductor.org/packages/release/bioc/vignettes/IHW/inst/doc/introduction_to_ihw.html
+# https://support.bioconductor.org/p/96800/
 
-weight_by_mean_expression = function(table, fdr_threshold=0.05, expression_col='AveExpr', pvalue_col='P.Value') {
+weight_by_mean_expression = function(table, fdr_threshold=0.05, expression_col='AveExpr', pvalue_col='P.Value', ...) {
     formula = as.formula(paste(pvalue_col, '~', expression_col))
-    ihw_res <- IHW::ihw(formula, data=table, alpha=fdr_threshold)
+    ihw_res <- IHW::ihw(formula, data=table, alpha=fdr_threshold, ...)
     ihw_res
 }
 

@@ -16,3 +16,4 @@ goatools
 sklearn
 enhanced_multiprocessing
 gsea_api
+scikit-gof
