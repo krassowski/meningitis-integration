@@ -1,5 +1,5 @@
 if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+    install.packages("BiocManager", quiet=T)
 
 install.packages('devtools')
 Sys.unsetenv("GITHUB_PAT")
@@ -20,13 +20,13 @@ install.packages('import', quiet=T)
 
 # pathological is required for readat and was removed from CRAN in the meantime
 devtools::install_url('https://cran.r-project.org/src/contrib/Archive/pathological/pathological_0.1-2.tar.gz')
-BiocManager::install("readat")
+BiocManager::install("readat", quiet=T)
 
 install.packages('gprofiler2', quiet=T)
 
-BiocManager::install("DESeq2")
+BiocManager::install("DESeq2", quiet=T)
 install.packages('corrplot', quiet=T)
-BiocManager::install("IHW")
+BiocManager::install("IHW", quiet=T)
 
 # Bioc version is too old, 2.1.0 required
 # BiocManager::install("ComplexHeatmap")
