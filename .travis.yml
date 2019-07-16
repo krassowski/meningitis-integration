@@ -1,29 +1,23 @@
 dist: bionic
 language: python
+if: tag IS present
 cache:
   - pip
   - packages
-if: tag IS present
 
 python:
   - 3.7
 
 before_install:
-  - sudo sh -c 'echo "deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/" >> /etc/apt/sources.list'
-  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+  - bash install_R.sh
 
 install:
+  - export MAKE='make -j 2'
+  - export CPPFLAGS= -Wno-ignored-attributes
   - bash setup.sh
 
 script:
   - nbpipeline --definitions_file pipeline.py
-
-#before_deploy:
-#  # Set up git user name and tag this commit
-#  - git config --local user.name "krassowski"
-#  - git config --local user.email "krassowski.michal@gmail.com"
-#  - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
-#  - git tag $TRAVIS_TAG
 
 deploy:
   provider: releases
