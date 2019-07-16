@@ -16,8 +16,8 @@ before_install:
 install:
   - while sleep 9m; do echo "$SECONDS seconds"; done &
   - export MAKE='make -j 2'
-  - export R_LIBS="~/R_lib"
-  - R_LIBS_USER="$HOME/R_lib:$R_LIBS_USER" bash setup.sh
+  - echo 'R_LIBS="~/R_lib"' > .Renviron
+  - bash setup.sh
   - kill %1
 
 script:
