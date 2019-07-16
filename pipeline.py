@@ -1,4 +1,4 @@
-from rules import NotebookRule, Group
+from nbpipeline.rules import NotebookRule, Group
 
 Group(
     'Proteomics',
@@ -14,6 +14,9 @@ Group(
     'Clinical',
     color='#cdedf6'
 )
+
+Group('Integration', color='blue')
+
 
 NotebookRule(
     'Extract SOMAScan protein data',
@@ -157,6 +160,13 @@ NotebookRule(
     group='RNA'
 )
 
+"""
+NotebookRule(
+    'Match transcripts, proteins and patients',
+    notebook='analyses/integration/Transcript-protein_matching.ipynb',
+    group='Integration'
+)
+
 ### ANALYSES
 
 NotebookRule(
@@ -293,3 +303,4 @@ NotebookRule(
     notebook='analyses/rnaseq_vs_clinical/Limma_vs_DESeq2.ipynb',
     group='RNA'
 )
+"""
