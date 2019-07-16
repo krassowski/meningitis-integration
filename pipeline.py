@@ -18,6 +18,7 @@ Group(
 Group('Integration', color='blue')
 
 
+"""
 NotebookRule(
     'Extract SOMAScan protein data',
     input={'csf_soma_path': 'data/raw/Protein/CSF_SOMA_Hyb_RawData.xlsx'},
@@ -139,6 +140,7 @@ NotebookRule(
     notebook='exploration/Notes_on_PCA_with_prcomp_and_factoextra.ipynb',
     input={'path': 'data/clean/protein/levels.csv'}
 )
+"""
 
 NotebookRule(
     'Extract RNASeq and the preliminary differential expression data (DSeq2).',
@@ -159,8 +161,8 @@ NotebookRule(
     ),
     group='RNA'
 )
-
 """
+
 NotebookRule(
     'Match transcripts, proteins and patients',
     notebook='analyses/integration/Transcript-protein_matching.ipynb',
