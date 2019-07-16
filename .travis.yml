@@ -5,7 +5,7 @@ cache:
   - apt: true
   - directories:
     - $HOME/.cache/pip
-    - $HOME/R_lib"
+    - $HOME/lib/R/site-library
 
 python:
   - 3.7
@@ -16,7 +16,8 @@ before_install:
 install:
   - while sleep 9m; do echo "$SECONDS seconds"; done &
   - export MAKE='make -j 2'
-  - echo 'R_LIBS="~/R_lib"' > ~/.Renviron
+  - mkdir $HOME/lib/R/site-library -p
+  - echo "R_LIBS_USER=$HOME/lib/R/site-library" > ~/.Renviron
   - bash setup.sh
   - kill %1
 
