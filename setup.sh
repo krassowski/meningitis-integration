@@ -9,10 +9,10 @@ Pin: release a=bionic-cran35
 Pin: version 3.5*
 Pin-Priority: 800
 
-Package: r-cran-nlme
-Pin: release a=bionic-cran35
-Pin: version 3.1.139-1bionic0
-Pin-Priority: 800
+#Package: r-cran-nlme
+#Pin: release a=bionic-cran35
+#Pin: version 3.1.139-1bionic0
+#Pin-Priority: 800
 EOF
 
 sudo apt-get install r-base-core r-base r-base-dev
