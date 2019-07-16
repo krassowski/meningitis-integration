@@ -15,7 +15,7 @@ install.packages('qqplotr', quiet=T)
 install.packages('cowplot', quiet=T)
 install.packages('ggthemes', quiet=T)
 
-install.packages('limma', quiet=T)
+BiocManager::install('limma', quiet=T)
 install.packages('statmod', quiet=T)
 
 install.packages('parallel', quiet=T)
