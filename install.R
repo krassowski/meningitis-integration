@@ -24,7 +24,7 @@ install.packages('parallel', quiet=T)
 install.packages('import', quiet=T)
 
 # pathological is required for readat and was removed from CRAN in the meantime
-devtools::install_url('https://cran.r-project.org/src/contrib/Archive/pathological/pathological_0.1-2.tar.gz')
+devtools::install_url('https://cran.r-project.org/src/contrib/Archive/pathological/pathological_0.1-2.tar.gz', quiet=T)
 BiocManager::install("readat", quiet=T)
 
 install.packages('gprofiler2', quiet=T)
@@ -34,7 +34,7 @@ BiocManager::install("IHW", quiet=T)
 
 # Bioc version is too old, 2.1.0 required
 # BiocManager::install("ComplexHeatmap")
-devtools::install_github("jokergoo/ComplexHeatmap")
+devtools::install_github("jokergoo/ComplexHeatmap", quiet=T)
 
 install.packages("pvclust", quiet=T)
 # TODO: remove the occurrences
