@@ -7,6 +7,9 @@ cache:
 python:
   - 3.7
 
+before_install:
+  - sudo sh -c 'echo "deb https://cloud.r-project.org/bin/linux/ubuntu/bionic-cran35/" >> /etc/apt/sources.list'
+
 install:
   - bash setup.sh
 
