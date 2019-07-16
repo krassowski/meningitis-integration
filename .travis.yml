@@ -2,8 +2,10 @@ dist: bionic
 language: python
 if: tag IS present
 cache:
-  - pip
-  - packages
+  - apt: true
+  - directories:
+    - $HOME/.cache/pip
+    - $HOME/R_lib"
 
 python:
   - 3.7
@@ -14,7 +16,7 @@ before_install:
 install:
   - while sleep 9m; do echo "$SECONDS seconds"; done &
   - export MAKE='make -j 2'
-  - export CPPFLAGS='-Wno-ignored-attributes -Wno-deprecated'
+  - export R_LIBS="~/R/lib"
   - bash setup.sh
   - kill %1
 

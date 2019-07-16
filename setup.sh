@@ -7,4 +7,4 @@ pip3 install -r requirements.txt
 cd helpers
 wget https://raw.githubusercontent.com/krassowski/pyvenn/master/venn.py -o _venn.py
 cd ..
-sudo Rscript install.R
+Rscript install.R

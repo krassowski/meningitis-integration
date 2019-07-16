@@ -1,8 +1,10 @@
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager", quiet=T)
 
-install.packages('Hmisc') # DESeq2 dependency
-BiocManager::install("DESeq2", quiet=T)
+# TODO:
+# should be installed, but fails on Travis
+# install.packages('Hmisc') # DESeq2 dependency
+# BiocManager::install("DESeq2", quiet=T)
 
 install.packages('devtools', quiet=T)
 Sys.unsetenv("GITHUB_PAT")
