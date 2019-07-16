@@ -1,7 +1,9 @@
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager", quiet=T)
 
-install.packages('devtools')
+BiocManager::install("DESeq2", quiet=T)
+
+install.packages('devtools', quiet=T)
 Sys.unsetenv("GITHUB_PAT")
 
 install.packages('ggplot2', quiet=T)
@@ -24,7 +26,6 @@ BiocManager::install("readat", quiet=T)
 
 install.packages('gprofiler2', quiet=T)
 
-BiocManager::install("DESeq2", quiet=T)
 install.packages('corrplot', quiet=T)
 BiocManager::install("IHW", quiet=T)
 
@@ -33,6 +34,7 @@ BiocManager::install("IHW", quiet=T)
 devtools::install_github("jokergoo/ComplexHeatmap")
 
 install.packages("pvclust", quiet=T)
+print('pvclust installed')
 install.packages("ggstatsplot", quiet=T)
 
 BiocManager::install("mixOmics")

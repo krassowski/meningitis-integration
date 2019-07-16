@@ -9,7 +9,7 @@ python:
   - 3.7
 
 before_install:
-  - bash install_R.sh
+  - travis_wait 50 bash install_R.sh
 
 install:
   - export MAKE='make -j 2'
