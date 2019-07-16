@@ -13,7 +13,7 @@ before_install:
 
 install:
   - export MAKE='make -j 2'
-  - export CPPFLAGS='-Wno-ignored-attributes'
+  - export CPPFLAGS='-Wno-ignored-attributes -Wno-deprecated'
   - bash setup.sh
 
 script:
