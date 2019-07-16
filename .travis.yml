@@ -9,12 +9,12 @@ python:
   - 3.7
 
 before_install:
-  - travis_wait 50 bash install_R.sh
+  - bash install_R.sh
 
 install:
   - export MAKE='make -j 2'
   - export CPPFLAGS='-Wno-ignored-attributes -Wno-deprecated'
-  - bash setup.sh
+  - travis_wait 50 bash setup.sh
 
 script:
   - nbpipeline --definitions_file pipeline.py
