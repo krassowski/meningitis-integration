@@ -1,6 +1,7 @@
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager", quiet=T)
 
+install.packages('Hmisc') # DESeq2 dependency
 BiocManager::install("DESeq2", quiet=T)
 
 install.packages('devtools', quiet=T)
@@ -34,8 +35,8 @@ BiocManager::install("IHW", quiet=T)
 devtools::install_github("jokergoo/ComplexHeatmap")
 
 install.packages("pvclust", quiet=T)
-print('pvclust installed')
-install.packages("ggstatsplot", quiet=T)
+# TODO: remove the occurrences
+#install.packages("ggstatsplot", quiet=T)
 
-BiocManager::install("mixOmics")
-BiocManager::install("ropls")
+BiocManager::install("mixOmics", quiet=T)
+BiocManager::install("ropls", quiet=T)

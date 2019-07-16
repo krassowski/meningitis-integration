@@ -18,7 +18,6 @@ Group(
 Group('Integration', color='blue')
 
 
-"""
 NotebookRule(
     'Extract SOMAScan protein data',
     input={'csf_soma_path': 'data/raw/Protein/CSF_SOMA_Hyb_RawData.xlsx'},
@@ -26,6 +25,7 @@ NotebookRule(
     notebook='exploration/protein/Data_extraction.ipynb',
     group='Proteomics'
 )
+"""
 
 
 NotebookRule(
