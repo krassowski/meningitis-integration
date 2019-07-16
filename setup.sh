@@ -16,6 +16,7 @@ Pin-Priority: 800
 EOF
 
 sudo apt-get update
+sudo apt-get install r-base-core
 sudo apt-get install r-cran-cluster
 sudo apt-get install r-recommended
 
