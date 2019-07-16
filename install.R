@@ -7,7 +7,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 # BiocManager::install("DESeq2", quiet=T)
 
 install.packages('devtools', quiet=T)
-Sys.unsetenv("GITHUB_PAT")
+# Sys.unsetenv("GITHUB_PAT")
 
 install.packages('ggplot2', quiet=T)
 install.packages('pheatmap', quiet=T)
