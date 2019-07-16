@@ -12,9 +12,11 @@ before_install:
   - bash install_R.sh
 
 install:
+  - while sleep 9m; do echo "$SECONDS seconds"; done &
   - export MAKE='make -j 2'
   - export CPPFLAGS='-Wno-ignored-attributes -Wno-deprecated'
-  - travis_wait 50 bash setup.sh
+  - bash setup.sh
+  - kill %1
 
 script:
   - nbpipeline --definitions_file pipeline.py
