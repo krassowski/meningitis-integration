@@ -15,8 +15,8 @@ Pin: version 3.1.139-1bionic0
 Pin-Priority: 800
 EOF
 
-sudo apt-get purge r-*
-sudo apt-get autoremove
+sudo apt-get update
+sudo apt-get install r-recommended
 
 sudo apt-get install libproj-dev libgdal-dev  # Needed for some R dependencies
 #sudo apt-get install r-recommended=3.5.3-1bionic_all
