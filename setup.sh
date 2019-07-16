@@ -15,14 +15,8 @@ Pin: version 3.1.139-1bionic0
 Pin-Priority: 800
 EOF
 
-sudo apt-get update
-sudo apt-get install r-base-core
-sudo apt-get install r-cran-cluster
-sudo apt-get install r-recommended
-
+sudo apt-get install r-base-core r-base r-base-dev
 sudo apt-get install libproj-dev libgdal-dev  # Needed for some R dependencies
-#sudo apt-get install r-recommended=3.5.3-1bionic_all
-sudo apt-get install r-base r-base-dev
 sudo apt-get install graphviz libgraphviz-dev graphviz-dev # (not used directly, required for static plots of nbpipeline)
 
 pip3 install -r requirements.txt
