@@ -13,6 +13,7 @@ Pin: version 3.1.139-1bionic0
 Pin-Priority: 800
 EOF
 
+sudo apt policy r-recommended
 sudo apt-get update
 sudo apt-get install libproj-dev libgdal-dev  # Needed for some R dependencies
 sudo apt-get install r-base r-base-dev
