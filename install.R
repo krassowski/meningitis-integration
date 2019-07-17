@@ -1,38 +1,42 @@
-install.packages('ggplot2')
-install.packages('pheatmap')
-install.packages('qqplotr')
-install.packages('cowplot')
-install.packages('ggthemes')
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager", quiet=T)
 
-install.packages('limma')
-install.packages('statmod')
+# TODO:
+# should be installed, but fails on Travis
+# install.packages('Hmisc') # DESeq2 dependency
+# BiocManager::install("DESeq2", quiet=T)
 
-install.packages('parallel')
+install.packages('devtools', quiet=T)
+install.packages('ggplot2', quiet=T)
+install.packages('pheatmap', quiet=T)
+install.packages('qqplotr', quiet=T)
+install.packages('cowplot', quiet=T)
+install.packages('ggthemes', quiet=T)
+
+BiocManager::install('limma', quiet=T)
+install.packages('statmod', quiet=T)
+
+install.packages('parallel', quiet=T)
 #install.packages('pbmcapply')
 
-install.packages('import')
+install.packages('import', quiet=T)
 
-source("https://bioconductor.org/biocLite.R")
-biocLite("readat")
-install.packages('gprofiler2')
+# pathological is required for readat and was removed from CRAN in the meantime
+devtools::install_url('https://cran.r-project.org/src/contrib/Archive/pathological/pathological_0.1-2.tar.gz', quiet=T)
+BiocManager::install("readat", quiet=T)
 
+install.packages('gprofiler2', quiet=T)
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-BiocManager::install("DESeq2")
-install.packages('corrplot')
-BiocManager::install("IHW")
-
-install.packages('devtools')
-Sys.unsetenv("GITHUB_PAT")
+install.packages('corrplot', quiet=T)
+BiocManager::install("IHW", quiet=T)
 
 # Bioc version is too old, 2.1.0 required
 # BiocManager::install("ComplexHeatmap")
-devtools::install_github("jokergoo/ComplexHeatmap")
+devtools::install_github("jokergoo/ComplexHeatmap", quiet=T)
 
-install.packages("pvclust")
-install.packages("ggstatsplot")
+install.packages("pvclust", quiet=T)
+# TODO: remove the occurrences
+#install.packages("ggstatsplot", quiet=T)
 
-BiocManager::install("mixOmics")
-BiocManager::install("ropls")
+BiocManager::install("mixOmics", quiet=T)
+BiocManager::install("ropls", quiet=T)

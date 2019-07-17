@@ -1,4 +1,4 @@
-from rules import NotebookRule, Group
+from nbpipeline.rules import NotebookRule, Group
 
 Group(
     'Proteomics',
@@ -15,6 +15,9 @@ Group(
     color='#cdedf6'
 )
 
+Group('Integration', color='blue')
+
+
 NotebookRule(
     'Extract SOMAScan protein data',
     input={'csf_soma_path': 'data/raw/Protein/CSF_SOMA_Hyb_RawData.xlsx'},
@@ -22,6 +25,7 @@ NotebookRule(
     notebook='exploration/protein/Data_extraction.ipynb',
     group='Proteomics'
 )
+"""
 
 
 NotebookRule(
@@ -136,6 +140,7 @@ NotebookRule(
     notebook='exploration/Notes_on_PCA_with_prcomp_and_factoextra.ipynb',
     input={'path': 'data/clean/protein/levels.csv'}
 )
+"""
 
 NotebookRule(
     'Extract RNASeq and the preliminary differential expression data (DSeq2).',
@@ -155,6 +160,13 @@ NotebookRule(
         all_samples_duplicates_path = 'data/other/duplicates_rna_all_samples.csv',
     ),
     group='RNA'
+)
+"""
+
+NotebookRule(
+    'Match transcripts, proteins and patients',
+    notebook='analyses/integration/Transcript-protein_matching.ipynb',
+    group='Integration'
 )
 
 ### ANALYSES
@@ -293,3 +305,4 @@ NotebookRule(
     notebook='analyses/rnaseq_vs_clinical/Limma_vs_DESeq2.ipynb',
     group='RNA'
 )
+"""
