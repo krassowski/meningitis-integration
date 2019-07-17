@@ -57,7 +57,7 @@ limma_fit = function(data, conditions_vector, a, b, use_all=T, workaround_for_no
         fit = contrasts_fit(fit, contrast.matrix, divide=workaround_for_non_transformed_data)
     } else {
         # TODO test change below against protein diff expr notebook
-        print(class(data))
+
         considered <- cbind(
             data[,conditions_vector == a],
             data[,conditions_vector == b]
