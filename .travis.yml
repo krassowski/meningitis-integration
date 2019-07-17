@@ -23,7 +23,7 @@ install:
   - kill %1
 
 script:
-  - nbpipeline -i --definitions_file pipeline.py --run_from_root
+  - nbpipeline -i --definitions_file pipeline.py --run_from_root --display_graph_with=none
 
 deploy:
   provider: releases
