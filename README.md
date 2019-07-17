@@ -1,5 +1,7 @@
 # Meningitis integration with PLS and network analysis
 
+[![Build Status](https://travis-ci.org/krassowski/meningitis-integration.svg?branch=master)](https://travis-ci.org/krassowski/meningitis-integration)
+
 ### Code organisation overview
 
 There will be three types of files in the repository:
