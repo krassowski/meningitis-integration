@@ -2,7 +2,6 @@ dist: bionic
 language: python
 if: tag IS present
 cache:
-  - apt: true
   - directories:
     - $HOME/.cache/pip
     - $HOME/lib/R/site-library
