@@ -15,7 +15,7 @@ Group(
     color='#cdedf6'
 )
 
-Group('Integration', color='blue')
+Group('Integration', color='#e9e8f6')
 
 
 NotebookRule(
@@ -25,7 +25,6 @@ NotebookRule(
     notebook='exploration/protein/Data_extraction.ipynb',
     group='Proteomics'
 )
-"""
 
 
 NotebookRule(
@@ -140,7 +139,6 @@ NotebookRule(
     notebook='exploration/Notes_on_PCA_with_prcomp_and_factoextra.ipynb',
     input={'path': 'data/clean/protein/levels.csv'}
 )
-"""
 
 NotebookRule(
     'Extract RNASeq and the preliminary differential expression data (DSeq2).',
@@ -161,7 +159,6 @@ NotebookRule(
     ),
     group='RNA'
 )
-"""
 
 NotebookRule(
     'Match transcripts, proteins and patients',
@@ -248,8 +245,12 @@ NotebookRule(
         },
         **{
             'out_log_matrix_filtered_path': 'data/clean/protein/log_10_filtered.csv'
-
-        }
+        },
+        **dict(
+            out_tmm_normalized_counts_path = 'data/preliminary_analyses/differential_protein_levels/normalized_counts/tmm_for_subsets.csv',
+            out_tmm_normalized_counts_gene_level_path = 'data/preliminary_analyses/differential_protein_levels/normalized_counts/gene_level_tmm_for_subsets.csv',
+            out_rle_normalized_counts_gene_level_path = 'data/preliminary_analyses/differential_protein_levels/normalized_counts/gene_level_rle_for_subsets.csv'
+        )
     },
     group='Proteomics'
 )
@@ -302,7 +303,6 @@ NotebookRule(
 
 NotebookRule(
     'Limma_vs_DESeq2.ipynb',
-    notebook='analyses/rnaseq_vs_clinical/Limma_vs_DESeq2.ipynb',
+    notebook='analyses/rnaseq_vs_clinical/_Limma_vs_DESeq2_-_comparison.ipynb',
     group='RNA'
 )
-"""
