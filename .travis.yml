@@ -6,6 +6,7 @@ cache:
   - directories:
     - $HOME/.cache/pip
     - $HOME/lib/R/site-library
+    - /tmp/nb_cache/
 
 python:
   - 3.7
