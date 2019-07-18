@@ -13,6 +13,7 @@ patient_colors <- list(
 patient_colors_values <- list(
     'HIV status'=c('Positive', 'Negative'),
     'Tuberculosis status'=c('Definite', 'Probable', 'Possible', '-'),
+    # TODO: rename Tuberculosis to Tuberculous
     'Meningitis'=c('Tuberculosis', 'Cryptococcal', 'Viral', 'Healthy control', 'Bacterial'),
     'Is RNA outlier'=c('False', 'True')
 )
@@ -23,5 +24,9 @@ for(group in names(patient_colors)) {
 
 
 
-color_meningitis = list(scale_color_manual(values=patient_colors$Meningitis))
-fill_meningitis = list(scale_fill_manual(values=patient_colors$Meningitis))
+color_meningitis = list(
+    scale_color_manual(values=patient_colors$Meningitis, name='Meningitis')
+)
+fill_meningitis = list(
+    scale_fill_manual(values=patient_colors$Meningitis, name='Meningitis')
+)

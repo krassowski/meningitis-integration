@@ -71,8 +71,16 @@ def scores_by_component(scores_map):
         for component in range(3)
     ])
 
+
 def format_test_train_scores(scores_train_X, scores_train_Y, scores_test_X, scores_test_Y):
     return pd.concat([
         scores_by_component({'T': scores_train_X, 'U': scores_train_Y}).assign(split='train'),
         scores_by_component({'T': scores_test_X, 'U': scores_test_Y}).assign(split='test')
     ])
+
+
+def concat_abundances(rna, protein):
+    return pd.merge(
+        rna.add_suffix('.R'), protein.add_suffix('.P'),
+        left_index=True, right_index=True
+    )
