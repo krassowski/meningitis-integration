@@ -126,3 +126,104 @@ filter_out_low_expression = function(dge, conditions_vector) {
     print(paste0('Retaining: ', round(ratio, 2), '%'))
     dge[keep,,keep.lib.sizes=FALSE]
 }
+
+
+# Move from RNA differential expression notebook:
+
+import::here(space_to_dot, .from='utilities.R')
+import::here(replace_ids, .from='identifiers_mapping.R')
+
+
+choose_ref = function(a, b, conditions) {
+    space_to_dot(setdiff(unique(conditions), c(a, b))[1])
+}
+
+calc_dge = function(a, b, data, conditions, voom=F, quality_weights=F, ref=F, as_is=F) {
+    design <- design_from_conditions(conditions, intercept=ref)
+
+    if (voom) {
+        if(quality_weights)
+            # see https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4551905/
+            # NB: it might possible to skip removal of the outliers when using "quality_weights"
+            dge = limma::voomWithQualityWeights(data, design, normalization="none")
+        else
+            # TODO: normalize="quantile"
+            dge = limma::voom(data, design)
+    }
+    else if (as_is) {
+        dge = data
+    }
+    else {
+        # expecting data to be fitered counts with pre-computed normalization factors
+        dge <- edgeR::cpm(data, log=TRUE, prior.count=0.25)
+    }
+    dge
+}
+
+calc_fit = function(a, b, data, conditions, voom=F, robust=T, use_all=T, ...) {
+    ref = choose_ref(a, b, conditions)
+    if(is.na(ref)) {
+        ref = F
+        use_all = F
+        print('No reference group, switching use_all off')
+    }
+
+    dge = calc_dge(a, b, data, conditions, voom=voom, ref=ref, ...)
+
+    raw_fit <- limma_fit(data=dge, conditions_vector=conditions, a=a, b=b, intercept=ref, use_all=use_all)
+
+    # when using voom, the trend correction is redundant
+    limma::eBayes(raw_fit, trend=!voom, robust=robust)
+}
+
+
+calc_de = function(a, b, data, conditions, confint=F, ...) {
+    fit = calc_fit(a, b, data, conditions, ...)
+    limma::topTable(fit, n=Inf, confint=confint)
+}
+
+
+camera_with_statistic = function(table, statistic, collection, ...) {
+    statistic = table[,statistic]
+    statistic = replace_ids(statistic, table, ...)
+    limma::cameraPR(statistic, collection)
+}
+
+
+calc_camera = function(a, b, data, conditions, statistic=NULL, collection=reactome_new_symbol, convert_to='symbol', ...) {
+    set.seed(0)
+    if(!is.null(statistic)) {
+        table = calc_de(a, b, data, conditions, ...)
+
+        camera_with_statistic(table, statistic, collection=collection, convert_to=convert_to)
+
+        # fit = calc_fit(a, b, data, conditions, ...)
+        # rownames(fit$t) = ensembl_to_entrez[rownames(fit),]
+        # limma::cameraPR(fit$t[,1], collection)
+    }
+    else {
+        ref = choose_ref(a, b, conditions)
+        if(is.na(ref)) {
+            ref = F
+            print('No reference group, setting to FALSE')
+        }
+
+        dge = calc_dge(a, b, data, conditions, ref=ref, ...)
+        design <- design_from_conditions(conditions, intercept=ref)
+
+        if(ref){
+            contrast_specification <- paste(
+                space_to_dot(a),
+                space_to_dot(b),
+                sep='-'
+            )
+            contrast.matrix <- limma::makeContrasts(contrasts=contrast_specification, levels=design)
+        }
+        if(!is.null(convert_to))
+            dge = replace_ids(dge, dge, convert_to=convert_to)
+        if (ref)
+            limma::camera(dge, collection, design, contrast=contrast.matrix)
+        else
+            limma::camera(dge, collection, design)
+    }
+}

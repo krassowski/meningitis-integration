@@ -1,47 +1,23 @@
-# Note: many functions in this file are GPL-3,
-# due to an extraction function data_for_plot which is based on GPL-3 derived code
-
-data_for_plot = function (
-    x, loading_name = c("Xjoint", "Yjoint", "Xorth", "Yorth"), 
-    i = 1, j = NULL, label = c("number", "colnames"),
-    ...
-) {
-    # Based on plot.o2p by Said el Bouhaddani et al., licence: GPL-3
-    # Note that the plotting functions usign this function are also GPL-3
-    # due to the licence virulence
-    loading_name = match.arg(loading_name)
-    which_load = switch(
-        loading_name,
-        Xjoint = "W.", Yjoint = "C.", 
+loadings = function(fit, which=c("Xjoint", "Yjoint", "Xorth", "Yorth"), subset=NULL) {
+    which = match.arg(which)
+    loading_id = switch(
+        which,
+        Xjoint = "W.", Yjoint = "C.",
         Xorth = "P_Yosc.", Yorth = "P_Xosc."
     )
-    load = as.matrix(x[which_load][[1]])
-    if (ncol(load) < max(i, j)) 
-        stop("i and j cannot exceed #components = ", ncol(load))
-    load = load[, c(i, j)]
-    p = nrow(as.matrix(load))
-    if (is.null(j)) {
-        load = cbind(1:p, load)
-        colnames(load) = c("index", paste(loading_name, "loadings", i))
-    }
-    else {
-        stopifnot(j == round(j))
-        colnames(load) = c(
-            paste(loading_name, "loadings", i),
-            paste(loading_name, "loadings", j)
-        )
-    }
-    label = match.arg(label)
-    if (label == "colnames" && !is.null(rownames(x[which_load][[1]]))) {
-        label = rownames(x[which_load][[1]])
-    }
-    load = as.data.frame(load)
-    load$label = rownames(load)
-    load
+    loadings = as.data.frame(fit[loading_id][[1]])
+
+    colnames(loadings) = paste(which, 'loadings', 1:ncol(loadings))
+    rownames(loadings) = rownames(fit[loading_id][[1]])
+
+    if (!is.null(subset))
+        loadings = loadings[, paste(which, 'loadings', subset), drop = FALSE]
+
+    loadings
 }
 
 plot_most_extreme_loadings = function(fit, n=25, loading_name='Xjoint', i=1, x_axis='index', x_values=NA) {
-    data = data_for_plot(fit, i=i, loading_name=loading_name)
+    data = loadings(fit, which=loading_name, subset=i)
     loading = paste(loading_name, 'loadings', i) 
     if(!is.na(x_values))
         data[[x_axis]] = x_values
@@ -100,5 +76,262 @@ single_scores_bar = function(fit, matrix, color='black') {
             panel.border = element_blank()
           )
         + ylab(paste0(matrix, '-Score'))
+    )
+}
+
+
+
+biplot_1D = function(fit, i=1, color, theme=color_meningitis) {
+    gridExtra::grid.arrange(
+        plot_most_extreme_loadings(fit, x_values=colMeans(log2(t(raw_rna_matrix[colnames(ran),rownames(ran)]))), x_axis='Mean.RNA', loading_name='Xjoint'),
+        single_scores_bar(fit, 'X', color=color) + theme,
+        plot_most_extreme_loadings(fit, x_values=colMeans(log2(t(raw_protein_matrix[colnames(pan),rownames(pan)]))), x_axis='Mean.Protein', loading_name='Yjoint'),
+        single_scores_bar(fit, 'Y', color=color) + theme,
+        ncol=4,
+        widths=c(0.4, 0.1, 0.4, 0.1)
+    )
+}
+
+
+scores.o2m <- function(x, which_part = c("Xjoint", "Yjoint", "Xorth", "Yorth"), 
+                         subset = 0, ...) {
+  # OmicsPLS::scores but working for orth, to be removed once 1.2.1 version is released
+  # by Said el Bouhaddani et al., licence: GPL-3
+  if(any(subset != abs(round(subset)))) stop("subset must be a vector of non-negative integers")
+  
+  which_part = match.arg(which_part)
+  which_scores = switch(which_part, Xjoint = "Tt", Yjoint = "U", Xorth = "T_Yosc", Yorth = "U_Xosc")
+  scores_matrix = x[[which_scores]]
+  dim_names = dimnames(scores_matrix)
+  if(length(subset) == 1 && subset == 0) subset = 1:ncol(scores_matrix)
+  if(max(subset) > ncol(scores_matrix)) stop("Elements in subset exceed #components")
+  scores_matrix = as.matrix(scores_matrix[,subset])
+  dimnames(scores_matrix) <- dim_names
+  
+  return(scores_matrix)
+}
+
+
+scores_plot = function(fit, t=1, u=1, color='black', i='Xjoint', j='Yjoint') {
+    scores_t = scores.o2m(fit, i)
+    scores_u = scores.o2m(fit, j)
+
+    data = data.frame(t=scores_t[,t], u=scores_u[,u], label=rownames(scores_t), color=color)
+    (
+        ggplot(data, aes(x=t, y=u, label=label, color=color))
+        + geom_point()
+        + ggrepel::geom_label_repel()
+        + xlab(paste0(i, ' score ', t))
+        + ylab(paste0(j, ' score ', u))
+        + stat_ellipse(level=0.95)
+    )
+}
+
+plus_minus_one_scale = function(x) {
+    2 * (x - min(x)) / (max(x) - min(x)) - 1
+}
+
+
+# block: joint or orth
+single_biplot = function(
+    fit, m_i, m_j, i, j, block='joint',
+    color='black', highlight='circle', n=25
+) {
+    i_block_id = paste0(m_i, block)
+    j_block_id = paste0(m_j, block)
+
+    scores_i = scores.o2m(fit, i_block_id)
+    scores_j = scores.o2m(fit, j_block_id)
+
+    loading_i_id = paste0(i_block_id, ' loadings ', i)
+    loading_j_id = paste0(j_block_id, ' loadings ', j)
+
+    loading_i_df = loadings(fit, i_block_id, subset=i)
+    loading_j_df = loadings(fit, j_block_id, subset=j)
+
+    loadings_df = merge(loading_i_df, loading_j_df, by="row.names")
+    loadings_df$label = loadings_df$Row.names
+
+    if(nrow(loadings_df) != nrow(loading_i_df) || nrow(loadings_df) != nrow(loading_j_df))
+        warning('Loadings differ, using shared subset')
+
+    lambda_i = max(abs(scores_i[,i]))
+    lambda_j = max(abs(scores_j[,j]))
+
+    if(!all(rownames(scores_i) == rownames(scores_j)))
+        stop('Scores rownames do not match')
+
+    scores = data.frame(
+        t=scores_i[, i],# / lambda_i,
+        u=scores_j[, j],# / lambda_j,
+        label=rownames(scores_i),
+        color=color
+    )
+
+    # impotant: loadings were scaled to the scores
+    # print(mean(loadings[[loading_i]]) / mean(loadings[[loading_j]]))
+    # print(lambda_i / lambda_j)
+
+    groups = unique(scores$color)
+
+    centroids = aggregate(. ~ color, scores, mean)
+
+    a = scores[scores$color == groups[[1]],]
+    b = scores[scores$color == groups[[2]],]
+
+    loadings_df[[loading_i_id]] = plus_minus_one_scale(loadings_df[[loading_i_id]]) * lambda_i
+    loadings_df[[loading_j_id]] = plus_minus_one_scale(loadings_df[[loading_j_id]]) * lambda_j
+
+    loading_i = loadings_df[[loading_i_id]]
+    loading_j = loadings_df[[loading_j_id]]
+
+    m1x = mean(a$t)
+    m2x = mean(b$t)
+    m1y = mean(a$u)
+    m2y = mean(b$u)
+    x = m1x - m2x
+    y = m1y - m2y
+    alpha = atan2(y, x)
+
+    intercept = (m1y - y/x * m1x + m2y - y/x * m2x)/2
+    beta = (alpha - pi/2)
+
+    intercept2 = (m1y + m2y) / 2 - tan(beta) * (m1x + m2x) / 2
+
+    if (highlight == 'circle') {
+        selection = loading_i^2 + loading_j^2
+    }
+    else if (highlight == 'DA') {
+        ty = loading_j
+        tx = loading_i
+        w = (ty - intercept2) / tan(beta) - tx
+        h = ty - (tx * tan(beta) + intercept2)
+        gamma = atan2(w, h)
+        distance = sin(gamma) * h
+        selection = distance
+    }
+    most_extreme = loadings_df[
+        head(order(-abs(selection)), n=n),
+    ]
+
+    g = ggplot(scores, aes(x=t, y=u))
+
+    if(highlight == 'DA') {
+        g = (
+            g
+            # DA line
+            + geom_abline(intercept=intercept, slope=tan(alpha), color='grey')
+            # separation line
+            + geom_abline(intercept=intercept2, slope=tan(beta), color='grey')
+        )
+    }
+
+    g = (
+        g
+        + geom_point(aes(color=color), size=2, shape=lapply(match(color, groups), function(i){
+            c(2,17,0,15)[i]
+        }))
+        + geom_point(
+            data=loadings_df,
+            aes_string(
+                x=paste0('`', loading_i_id, '`'),
+                y=paste0('`', loading_j_id, '`')
+            ),
+            color='grey70'
+            # alpha=0.2
+        )
+        + geom_point(
+            data=most_extreme,
+            aes_string(
+                x=paste0('`', loading_i_id, '`'),
+                y=paste0('`', loading_j_id, '`')
+            )
+        )
+        # centroid
+        + geom_point(data=centroids, aes(color=color), size=5, shape=18)
+        + stat_ellipse(aes(color=color))
+
+        + ggrepel::geom_label_repel(
+            data=most_extreme,
+            aes_string(
+                x=paste0('`', loading_i_id, '`'),
+                y=paste0('`', loading_j_id, '`'),
+                label='label'
+            )
+        )
+        + xlab(paste0(block, ' ', m_i, '-score ', i, ' and ', block, ' ', m_i, '-loading W', i))
+        + ylab(paste0(block, ' ', m_j, '-score ', j, ' and ', block, ' ', m_j, '-loading W', j))
+        #+ coord_fixed()
+    )
+    g
+}
+
+
+biplot_2D = function(fit, i=1, j=2, color, theme, ...) {
+    gridExtra::grid.arrange(
+        single_biplot(fit, 'X', 'X', i=i, j=j, color=color, ...) + theme,
+        single_biplot(fit, 'Y', 'Y', i=i, j=j, color=color, ...) + theme,
+        #single_scores_bar(fit, , ) + color_meningitis,
+        #plot_most_extreme_loadings(fit, x_values=colMeans(log2(t(raw_protein_matrix[colnames(pan),rownames(pan)]))), x_axis='Mean.Protein', loading_name='Yjoint'),
+        #single_scores_bar(fit, 'Y', color=color) + color_meningitis,
+        ncol=2
+    )
+}
+
+
+s_plot = function(data_matrix, fit, m, i, block='joint', n=20) {
+    # References:
+    # - http://metabolomics.se/Courses/MVA/MVA%20in%20Omics_Handouts_Exercises_Solutions_Thu-Fri.pdf
+    # note - data_matrix should be in the same form as provided for fitting (transformed/normalized)
+    # x axis represents variable magnitude (irrelevant for scaled data)
+    # y axis represents "reliability"
+    i_block_id = paste0(m, block)
+
+    scores_i = scores.o2m(fit, i_block_id)[,i]
+
+    loading_i_id = paste0(i_block_id, ' loadings ', i)
+    loading_i = loadings(fit, i_block_id, subset=i)[[loading_i_id]]
+
+    df = data.frame(
+        # TODO centering?
+        cov=cov(scores_i, data_matrix)[1,],
+        cor=cor(scores_i, data_matrix)[1,],
+        cor_pvalue=apply(
+            data_matrix, 2, function(x){
+                cor.test(x, scores_i)$p.value
+            }
+        )
+    )
+    df$fdr = p.adjust(df$cor_pvalue, 'BH')
+
+    print(cor(loading_i, df$cov))
+    print(cor(loading_i, df$cor))
+
+    df$label = rownames(df)
+    df$significant = df$fdr < 0.05
+
+    low_risk = df[
+        df$significant &
+        abs(df$cor) > 0.7
+        &
+        (
+            df$cov > quantile(df$cov, 0.8)
+            |
+            df$cov < quantile(df$cov, 0.2)
+        ),
+    ]
+
+    if (nrow(low_risk) > n) {
+        low_risk = head(low_risk[order(
+            -abs(low_risk$cor)
+            -abs(rank(low_risk$cov) - median(rank(low_risk$cov))) / nrow(low_risk)
+        ), ], n)
+    }
+
+    (
+        ggplot(df, aes(x=cov, y=cor))
+        + geom_point(aes(color=significant))
+        + ggrepel::geom_label_repel(data=low_risk, aes(label=label))
+        + ggtitle(paste('S-plot of', block, m, 'component', i))
     )
 }

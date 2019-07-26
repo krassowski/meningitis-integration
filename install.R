@@ -40,3 +40,5 @@ install.packages("pvclust", quiet=T)
 
 BiocManager::install("mixOmics", quiet=T)
 BiocManager::install("ropls", quiet=T)
+
+BiocManager::install("vsn", quiet=T)

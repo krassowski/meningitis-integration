@@ -32,7 +32,16 @@ DataFrame.sort_values.__defaults__ = tuple(
 )
 
 from rpy2.rinterface_lib.callbacks import logger as rpy2_logger
-rpy2_logger.addFilter(lambda record: 'notch went outside hinges' in record.msg)
+rpy2_logger.addFilter(lambda record: 'notch went outside hinges' not in record.msg)
+
+import rpy2.rinterface
+
+def print_to_notebook(x):
+    print(x, end='')
+
+# rpy2.rinterface_lib.callbacks.consolewrite_print = print_to_notebook
+rpy2.rinterface_lib.callbacks.consolewrite_warnerror = print_to_notebook
+
 
 show_table = display_table
 full_table = partial(display_table, n_rows=None)
@@ -42,6 +51,7 @@ def keys(obj):
     return list(obj.keys())
 
 # embed_source_styling()
+
 
 T = True
 F = False
@@ -59,7 +69,9 @@ class Dummy:
     def __getattr__(self, key):
         return
 
+
 dummy = Dummy()
+
 
 def get_or_dummy(callback, *args, **kwargs):
     try:
@@ -72,18 +84,3 @@ load_inputs = partial(
     load_inputs,
     main_loader=partial(read_csv, index_col=0)
 )
-
-
-def display_heads(frames, n_rows=4):
-    for name, df in frames.items():
-        display(HTML(f'<code>{name}</code>'))
-        display_table(df, n_rows=n_rows, n_cols=4)
-
-
-def load_and_display_inputs(namespace, **kwargs):
-    return display_heads(
-        load_inputs(
-            namespace,
-            **kwargs
-        )
-    )
