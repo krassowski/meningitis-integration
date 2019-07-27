@@ -24,6 +24,10 @@ for(group in names(patient_colors)) {
 
 
 
+color_tuberculosis = list(
+    scale_color_manual(values=patient_colors$`Tuberculosis status`, name='Tuberculosis status')
+)
+
 color_meningitis = list(
     scale_color_manual(values=patient_colors$Meningitis, name='Meningitis')
 )

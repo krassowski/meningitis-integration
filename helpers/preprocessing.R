@@ -177,12 +177,44 @@ correct_trend = function(
     transformed
 }
 
-calc_normalization_factors = function(dge, method, test_method=NULL, iterations=1) {
+
+calc_normalization_factors = function(dge, method, test_method=NULL, iterations=1, rescale_lib=T, rescale_factor=T) {
 
     if(is.null(test_method)) {
         if(iterations != 1)
             stop('iterations do not make sense without test_method')
-        dge = edgeR::calcNormFactors(dge, method = method)
+        if(method == 'qtotal') {
+            lib_sizes = colSums(dge$counts)
+            stopifnot(all(dge$samples$lib.size == lib_sizes))
+
+            # note from the paper's code it seems that they always scaled the size
+            # factors, dividing by the mean -  even for TMM (which is not done in the edgeR::cpm)
+            # see https://github.com/wtaoyang/RNASeqComparison/blob/master/Rscript/NormMethods.r
+            # this may change things a bit..
+            size_factors = ABSSeq::qtotalNormalized(dge$counts)
+
+            # silly mistake or a nice way to demonstrate overfitting:
+            # size_factors = size_factors * mean(size_factors)
+
+            if(rescale_factor)
+                size_factors = size_factors / mean(size_factors)
+
+            dge$samples$norm.factors = size_factors
+            # so this on one hand follows what they did for the paper more closely,
+            # but on the other changes the order of magnitude of the size
+            # factors by 6-9 orders, thus causing a lot of lowly expressed
+            # genes to appear significant in voom - so it seem that this
+            # is not the right way to go. Also the paper uses design
+            # without intercept which is known to cause problems for voom
+            # while I could get great results, I am afraid that this is overfitting.
+            #dge$samples$lib.size = lib_sizes / lib_sizes # a vector of 1s
+            
+            # but this one does not suffer from the above mentioned issues
+            dge$samples$lib.size = lib_sizes / lib_sizes * ifelse(rescale_lib, mean(lib_sizes), 1)
+        }
+        else {
+            dge = edgeR::calcNormFactors(dge, method = method)
+        }
     }
     else {
         library(TCC)
