@@ -211,7 +211,7 @@ calc_camera = function(a, b, data, conditions, statistic=NULL, collection=reacto
         dge = calc_dge(a, b, data, conditions, ref=ref, ...)
         design <- design_from_conditions(conditions, intercept=ref)
 
-        if(ref){
+        if(ref != F){
             contrast_specification <- paste(
                 space_to_dot(a),
                 space_to_dot(b),
@@ -221,7 +221,7 @@ calc_camera = function(a, b, data, conditions, statistic=NULL, collection=reacto
         }
         if(!is.null(convert_to))
             dge = replace_ids(dge, dge, convert_to=convert_to)
-        if (ref)
+        if (ref != F)
             limma::camera(dge, collection, design, contrast=contrast.matrix)
         else
             limma::camera(dge, collection, design)

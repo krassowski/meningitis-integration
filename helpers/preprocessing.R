@@ -177,31 +177,22 @@ correct_trend = function(
     transformed
 }
 
-calc_normalization_factors = function(dge, method, iterations=1) {
+calc_normalization_factors = function(dge, method, test_method=NULL, iterations=1) {
 
-    if(method %in% c('TMM', 'RLE', 'none')) {
+    if(is.null(test_method)) {
         if(iterations != 1)
-            stop('this method does not support iterations')
+            stop('iterations do not make sense without test_method')
         dge = edgeR::calcNormFactors(dge, method = method)
     }
     else {
-        if (method == 'EEE') {
-            m = 'edger'
-            n = 'TMM'
-        }
-        else if (method == 'SSS') {
-            m = 'deseq2'
-            n = 'deseq2'
-        }
+        library(TCC)
 
-        tcc = new(
-            "TCC",
-            dge$counts,
-            dge$samples$group
-        )
+        tcc = new("TCC", dge$counts, dge$samples$group)
         tcc = TCC::calcNormFactors(
             tcc,
-            norm.method=n, test.method=m, iteration=3
+            norm.method=method,
+            test.method=test_method,
+            iteration=iterations
         )
         dge$samples$norm.factors = tcc$norm.factors
     }
