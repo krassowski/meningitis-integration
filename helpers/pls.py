@@ -41,16 +41,17 @@ PandasPLSRegression = pls_wrapper(PLSRegression)
 PandasPLSCanonical = pls_wrapper(PLSCanonical)
 
 
-def format_grid_results(reg):
+def format_grid_results(reg, ):
     statistics = {
         'split' + str(split) + '_test_' + statistic: statistic
         for statistic in reg.scoring.keys()
         for split in range(reg.cv.get_n_splits())
     }
+    params = [k for k in reg.cv_results_.keys() if k.startswith('param_')]
     grid_results = DataFrame(reg.cv_results_).dropna()[
-        ['param_n_components', *statistics.keys()]
+        [*params, *statistics.keys()]
     ].astype(float)
-    grid_results = grid_results.melt(id_vars='param_n_components')
+    grid_results = grid_results.melt(id_vars=params)
     grid_results['scoring'] = grid_results.variable.map(statistics)
     grid_results['split'] = grid_results.variable.str.split('_').str[0].str.replace('split', '')
     return grid_results
