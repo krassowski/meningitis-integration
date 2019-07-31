@@ -41,17 +41,26 @@ PandasPLSRegression = pls_wrapper(PLSRegression)
 PandasPLSCanonical = pls_wrapper(PLSCanonical)
 
 
-def format_grid_results(reg, ):
+def format_grid_results(reg, strip_last_step_prefix=True):
     statistics = {
         'split' + str(split) + '_test_' + statistic: statistic
         for statistic in reg.scoring.keys()
         for split in range(reg.cv.get_n_splits())
     }
+    
     params = [k for k in reg.cv_results_.keys() if k.startswith('param_')]
+    
     grid_results = DataFrame(reg.cv_results_).dropna()[
         [*params, *statistics.keys()]
     ].astype(float)
     grid_results = grid_results.melt(id_vars=params)
+
+    if hasattr(reg.estimator, 'steps'):
+        prefix = reg.estimator.steps[-1][0]
+        grid_results = grid_results.rename(
+            columns=lambda c: 'param_' + c[6 + len(prefix) +2:] if c.startswith('param_' + prefix) else c
+        )
+    
     grid_results['scoring'] = grid_results.variable.map(statistics)
     grid_results['split'] = grid_results.variable.str.split('_').str[0].str.replace('split', '')
     return grid_results
@@ -85,3 +94,11 @@ def concat_abundances(rna, protein):
         rna.add_suffix('.R'), protein.add_suffix('.P'),
         left_index=True, right_index=True
     )
+
+
+def weighted_press(estimator, x, y):
+    # Note: it looks like in the publication they define N before CV
+    # (though I am not sure) but this this should not make a big difference
+    N = estimator.x_scores_.shape[0]
+    A = estimator.n_components
+    return metrics.mean_squared_error(estimator.predict(x), y) / (N - A - 1)

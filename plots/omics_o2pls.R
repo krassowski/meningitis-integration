@@ -16,6 +16,7 @@ loadings = function(fit, which=c("Xjoint", "Yjoint", "Xorth", "Yorth"), subset=N
     loadings
 }
 
+
 plot_most_extreme_loadings = function(fit, n=25, loading_name='Xjoint', i=1, x_axis='index', x_values=NA) {
     data = loadings(fit, which=loading_name, subset=i)
     loading = paste(loading_name, 'loadings', i) 
@@ -31,10 +32,12 @@ plot_most_extreme_loadings = function(fit, n=25, loading_name='Xjoint', i=1, x_a
     p
 }
 
+
 get_scores = function(fit, matrix) {
     id = switch(matrix, X='Tt', Y='U')
     fit[[id]]
 }
+
 
 matrix_scores_plot = function(fit, matrix, x=1, y=2, color='black', ...) {
     name = switch(matrix, X='T', Y='U')
@@ -333,5 +336,67 @@ s_plot = function(data_matrix, fit, m, i, block='joint', n=20) {
         + geom_point(aes(color=significant))
         + ggrepel::geom_label_repel(data=low_risk, aes(label=label))
         + ggtitle(paste('S-plot of', block, m, 'component', i))
+    )
+}
+
+
+grid_search_plot = function(grid, ncol=3) {
+    (
+        ggplot(grid, aes(
+            y=value,
+            x=param_joint_components,
+            group=param_joint_components
+        ))
+        + facet_wrap(
+            'scoring_label', scale='free_y', ncol=ncol,
+            labeller=as_labeller(latex2exp::TeX, default = label_parsed)
+        )
+        + geom_boxplot()
+        + nice_theme
+    )
+}
+
+
+grid_orthogonal_components_plot = function(grid, value='average_cv_predictions', value_legend='mean of CV (Q^2X + Q^2Y)/2') {
+    (
+        ggplot(grid[grid$scoring == value,], aes(
+            fill = ortho_gain_percent,
+            x = param_x_ortho_components,
+            y = param_y_ortho_components
+        ))
+        + facet_wrap(
+            'param_joint_components',
+            scale='free_y',
+            labeller=as_labeller(function(x) paste('Joint components: ', x))
+        )
+        + geom_tile()
+        + shadowtext::geom_shadowtext(
+            aes(
+                label=round(mean, 3),
+                color=value_legend
+            ),
+            vjust=0, check_overlap=T,
+            bg.r=0.2, bg.color='grey65',
+        )
+        + shadowtext::geom_shadowtext(
+            aes(
+                label=paste0(
+                    sprintf(
+                        "%+.2f",
+                        ortho_gain_percent
+                    ),
+                    '%'
+                ),
+                color='gain over the joint component average'
+            ),
+            bg.r=0.2, bg.color='grey40',
+            vjust=1.5, check_overlap=T
+        )
+        + nice_theme
+        + xlab('Number of X-orthogonal components')
+        + ylab('Number of Y-orthogonal components')
+        + scale_color_manual(values=c('chartreuse', 'black'))
+        + ggthemes::scale_fill_gradient2_tableau('Red-Green Diverging') 
+        #+ scale_fill_gradient2(low='darkred', mid='grey80', high='darkgreen')
     )
 }

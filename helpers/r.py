@@ -15,3 +15,8 @@ def r_function(__name__, *args, **kwargs):
     with localconverter(ro.default_converter + numpy2ri.converter + pandas2ri.converter):
         return r[__name__](*args, **kwargs)
 
+
+def r_function_numpy(__name__, *args, **kwargs):
+    with localconverter(ro.default_converter + numpy2ri.converter):
+        return r[__name__](*args, **kwargs)
+
