@@ -129,7 +129,11 @@ gene_set_heatmap = function(pathways_subset, counts, collection, id_type, skip_c
 #    
 #}
 
-advanced_differential_expression_heatmap = function(genes_subset, counts, skip_cols=outliers, id_to_gene_name=NA, main='Differential expression', patients_clustering=NULL, ...) {
+advanced_differential_expression_heatmap = function(
+    genes_subset, counts, skip_cols=outliers, id_to_gene_name=NA,
+    main='Differential expression', patients_clustering=NULL,
+    ...
+) {
     
     if(nrow(genes_subset) == 0)
         return(NULL)
@@ -164,7 +168,7 @@ advanced_differential_expression_heatmap = function(genes_subset, counts, skip_c
             patients_clustering <- pvclust::pvclust(
                 scale(counts), parallel=T,
                 method.hclust="ward.D2", method.dist="correlation",
-                quiet=T
+                quiet=T, ...
             )
         else {
             print('Too few observations to assess the clustering p-values')
