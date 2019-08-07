@@ -325,6 +325,7 @@ s_plot = function(data_matrix, fit, m, i, block='joint', n=20) {
     ]
 
     if (nrow(low_risk) > n) {
+        print(paste('Trimming', nrow(low_risk) - n))
         low_risk = head(low_risk[order(
             -abs(low_risk$cor)
             -abs(rank(low_risk$cov) - median(rank(low_risk$cov))) / nrow(low_risk)

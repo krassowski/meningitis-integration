@@ -18,6 +18,10 @@ from helpers.r import r_function
 from dataclasses import dataclass
 
 
+# load the overrides
+r_function('source', 'thirdparty/OmicsPLS_overrides.R')
+
+
 @dataclass(frozen=True)
 class Statistic:
     name: str
@@ -285,7 +289,7 @@ class O2PLS:
         'W_Yosc': 'W_Yosc'
     }
     
-    def __init__(self, max_iterations=200, algorithm='nipals', **params):
+    def __init__(self, max_iterations=200, algorithm='nipals', verbose=False, save_memory=False, **params):
         """
         Args:
             max_iterations
@@ -293,6 +297,7 @@ class O2PLS:
         self.params = {
             'max_iterations': max_iterations,
             'algorithm': algorithm,
+            'verbose': verbose,
             **params
         }
         self.fitted = False
@@ -315,7 +320,8 @@ class O2PLS:
         return Series(metrics).to_frame().T
         
     def fit(self, X, Y):
-        self.fitted = True
+        if self.params['verbose']:
+            print('Fitting started...')
         Y = np.atleast_2d(Y)
         self.X = X
         self.Y = Y
@@ -332,6 +338,7 @@ class O2PLS:
         if algorithm == 'default_svd':
             r_implementation = o2m
         # TODO: test if \1 > max_iterations, warn about lack of convergence
+
         with silent_output(messages_to_silence) as silenced_lines:
             self.r_model = r_implementation(
                 as_matrix(X), r_matrix(as_matrix(Y)),
@@ -341,7 +348,7 @@ class O2PLS:
                 ny=self.params['y_ortho_components'],
                 max_iterations=self.params['max_iterations']
             )
-
+        
         self._logs = silenced_lines
         self.model = named_vector_to_dict(self.r_model)
         
@@ -350,6 +357,7 @@ class O2PLS:
 
         self.E = X - self.predict_x(Y)
         self.F = Y - self.predict_y(X)
+        self.fitted = True
         return self
     
     @property
@@ -415,6 +423,26 @@ class O2PLS:
         self.params.update(params)
         return self
 
+    @property
+    def joint_X(self):
+        return self.T @ self.W.T
+
+    @property
+    def joint_Y(self):
+        return self.U @ self.C.T
+    
+    def calculate_Y_scores_U(self, Y):
+        return (Y - Y @ self.C_Xosc @ self.C_Xosc.T) @ self.C
+    
+    def calculate_X_scores_T(self, X):
+        return (X - X @ self.W_Yosc @ self.W_Yosc.T) @ self.W
+    
+    def calculate_Y_scores_U_without_osc(self, Y):
+        return Y @ self.C
+    
+    def calculate_X_scores_T_without_osc(self, X):
+        return X @ self.W
+    
     @property
     def r_metrics(self):
         return Series({

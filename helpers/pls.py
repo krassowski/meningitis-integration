@@ -41,11 +41,11 @@ PandasPLSRegression = pls_wrapper(PLSRegression)
 PandasPLSCanonical = pls_wrapper(PLSCanonical)
 
 
-def format_grid_results(reg, strip_last_step_prefix=True):
+def format_grid_results(reg, X=None, strip_last_step_prefix=True):
     statistics = {
         'split' + str(split) + '_test_' + statistic: statistic
         for statistic in reg.scoring.keys()
-        for split in range(reg.cv.get_n_splits())
+        for split in range(reg.cv.get_n_splits(X))
     }
     
     params = [k for k in reg.cv_results_.keys() if k.startswith('param_')]

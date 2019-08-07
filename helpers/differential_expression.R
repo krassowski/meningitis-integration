@@ -118,12 +118,18 @@ extract_counts = function(counts) {
 }
 
 
-filter_out_low_expression = function(dge, conditions_vector) {
+select_by_expression_level = function(dge, conditions_vector) {
     design <- design_from_conditions(conditions_vector)
     counts_condition <- length(rownames(dge))
     keep <- edgeR::filterByExpr(dge, design)
     ratio <- sum(keep) / length(rownames(dge)) * 100
     print(paste0('Retaining: ', round(ratio, 2), '%'))
+    keep
+}
+
+
+filter_out_low_expression = function(dge, conditions_vector) {
+    keep = select_by_expression_level(dge, conditions_vector)
     dge[keep,,keep.lib.sizes=FALSE]
 }
 

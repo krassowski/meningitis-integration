@@ -3,7 +3,7 @@ from warnings import warn
 
 import numpy as np
 from pandas import Series, DataFrame
-from skgof import ks_test, cvm_test, ad_test
+from skgof import ks_test, ad_test
 from scipy.stats import genpareto
 
 
@@ -55,13 +55,24 @@ def gpd_p_value(test_statistics: Series, null_distribution: DataFrame, n=250, m=
     N = len(null_distribution.columns)
     
     assert n < N
-    
+
     # indicator vector
     does_test_exceed_null = null_distribution.ge(test_statistics, axis='rows')
 
     # count of test statistic exceedances
     M = does_test_exceed_null.sum(axis=1)
-    
+
+    if len(M) == 0:
+        print('No observations for p-value estimation!')
+        return DataFrame(
+            columns={
+                'p_value': np.nan,
+                'is_gpd': np.nan,
+                'gof': np.nan,
+                'ecdf_p': np.nan
+            }.keys()
+        )
+
     if min(M) >= m:
         print(f'Got enough permutations, no observations with fewer exceedances than {m}, falling back to ECDF')
         return DataFrame({
@@ -84,11 +95,13 @@ def gpd_p_value(test_statistics: Series, null_distribution: DataFrame, n=250, m=
         null_i = sorted(null_i)
         t = None
         
+        if all(np.isnan(null_i)):
+            return np.nan, False, np.nan, np.nan
+        
         # compute ecdf based, biased estimate of p-value
         raw_ecdf_estimate = (ecdf_pseudocount + d_i.sum()) / (N + 1)
         
         if M_i < m:
-            print(m)
             # fit GDP, reducing $n$ until convergance
             while n_i > 0:
                 
@@ -97,7 +110,7 @@ def gpd_p_value(test_statistics: Series, null_distribution: DataFrame, n=250, m=
                 
                 y_untill_n = null_i[-n_i:]
                 exceedences = y_untill_n - t
-                
+
                 assert all(y_untill_n >= t)
                 assert len(exceedences) == n_i
                 
@@ -116,6 +129,7 @@ def gpd_p_value(test_statistics: Series, null_distribution: DataFrame, n=250, m=
             return n_i / N * (1 - gpd_fit.cdf(test_i - t)), True, gpd_fit_p_value, raw_ecdf_estimate
         else:
             if gpd_fit:
+                # TODO: get index and highlight which observation could not be fitted!
                 warn(f'A good GPD fit could not be reached, using ECDF estimate instead')
             
             return raw_ecdf_estimate, False, np.nan, raw_ecdf_estimate
