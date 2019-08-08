@@ -7,12 +7,14 @@ from pandas import DataFrame, Series
 from rpy2.robjects import r
 
 from helpers.p_values import gpd_p_value
-from helpers.r import p_adjust, r_function
+from helpers.r import p_adjust, r_function, r_function_numpy
 
 
 @dataclass
 class Coefficients:
     data: DataFrame
+    non_zero_coeffs_count_by_cv: Series
+    coeffs_across_cv: DataFrame
 
     def transform(self, df):
         return df
@@ -30,16 +32,18 @@ class Coefficients:
             self.data = coeffs
             return
 
+        self.non_zero_coeffs_count_by_cv = (coeffs_across_cv != 0).sum(axis=0)
+
         coeffs['selected_in'] = (coeffs_across_cv != 0).mean(axis=1)
         coeffs['positive_in'] = (coeffs_across_cv > 0).mean(axis=1)
         coeffs['negative_in'] = (coeffs_across_cv < 0).mean(axis=1)
 
         coeffs['volatile'] = (
-                2 * coeffs[['positive_in', 'negative_in']].min(axis=1)
-                / coeffs['selected_in']
-        )
+            (2 * coeffs[['positive_in', 'negative_in']].min(axis=1) / coeffs['selected_in'])
+        ).fillna(0)
 
         coeffs_across_cv = self.transform(coeffs_across_cv)
+        self.coeffs_across_cv = coeffs_across_cv
 
         coeffs['mean'] = coeffs_across_cv.mean(axis=1)
         coeffs['stdev'] = coeffs_across_cv.std(axis=1)
@@ -101,12 +105,15 @@ class Coefficients:
 
     def add_hdi_significance(self, x, y, family='binomial', cores=4):
         r('library("hdi")')
-        lasso_proj = partial(r_function, 'lasso.proj')
+        lasso_proj = partial(r_function_numpy, 'lasso.proj')
         as_matrix = partial(r_function, 'as.matrix')
-        as_numeric = partial(r_function, 'as.numeric')
-        print(x)
-        print(y)
-        result = lasso_proj(x=as_matrix(x.values), y=as_numeric(y), family=family, parallel=True, ncores=cores)
+        from rpy2 import robjects
+        robjects.globalenv['y'] = y.tolist()
+        r('y = as.numeric(y)')
+        result = lasso_proj(
+            x=as_matrix(x.values), y=r['y'],
+            family=family, parallel=True, ncores=cores
+        )
         self.data[f'{family}_p'] = Series(result.rx2('pval'), index=x.columns)
         self.data[f'{family}_FDR'] = p_adjust(self.data[f'{family}_p'], 'BH')
 
@@ -117,6 +124,13 @@ class Coefficients:
             self.add_permutation_significance(**kwargs)
         else:
             self.add_hdi_significance(**kwargs)
+
+    def add_weighted_auc(self, cv_auc: DataFrame):
+        coeffs = self.data
+        contribution = self.coeffs_across_cv.abs() / self.coeffs_across_cv.abs().sum()
+        coeffs['weighted_auc'] = (
+            contribution.values * pd.concat([Series(cv_auc) for _ in range(len(coeffs))], axis=1).T.values
+        ).mean(axis=1)
 
     def select(self, non_zero_ratio_required=0.05):
         coeffs = self.data

@@ -230,13 +230,13 @@ mean_vs_coefficients = function(coeffs, n=10, transformation=identity, fdr_thres
 }
 
 
-coefficients_volcano_plot = function(coeffs, n=10, transformation=identity, p_value='p_value') {
+coefficients_volcano_plot = function(coeffs, n=10, transformation=identity, p_value='p_value', neg=TRUE) {
     coeffs$is_frequent = coeffs$selected_in > 0.5
     coeffs$gene = rownames(coeffs)
-    top_coeffs = select_coeffs(coeffs, n, by=p_value, descending=T)
+    top_coeffs = select_coeffs(coeffs, n, by=p_value, descending=neg)
     
     (
-        ggplot(coeffs, aes_string(y='mean', x=paste0('-log10(', p_value, ')')))
+        ggplot(coeffs, aes_string(y='mean', x=paste0((if (neg) '-' else ''), 'log10(', p_value, ')')))
         + geom_errorbar(aes(ymin=mean-ci, ymax=mean+ci), color='grey40')
         + geom_point(
             aes(

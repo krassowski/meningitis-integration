@@ -8,7 +8,7 @@ from pandas import DataFrame, Series
 
 from .coefficients import Coefficients, Contributions
 from .flexible_pipeline import FlexiblePipeline
-from .roc_auc import roc_auc_plot_data
+from .roc_auc import roc_auc_plot_data, compute_cv_statistics
 
 
 @dataclass
@@ -126,11 +126,18 @@ class Result:
         )
 
     @property
-    def roc_auc_data(self):
+    def roc_auc(self):
         return roc_auc_plot_data(
             self.predicted_probabilities,
             self.binary_true_responses
         )
+
+    @property
+    def cv_auc(self):
+        return compute_cv_statistics(
+            self.predicted_probabilities,
+            self.binary_true_responses
+        )[0]
 
 
 @dataclass
