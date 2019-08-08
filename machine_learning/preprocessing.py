@@ -8,12 +8,17 @@ class Filter(TransformerMixin):
         self.verbose = verbose
         self.to_filter_out = None
         
-    def transform(self, x): 
-
+    def transform(self, x):
+        to_filter_out_columns = x.columns.isin(self.to_filter_out)
         if self.verbose:
             name = self.__class__.__name__
-            print(f'{name}: filtering out {sum(self.to_filter_out)} variables')
-        return x[x.columns[~self.to_filter_out]]
+            print(
+                f'{name}: filtering out {sum(to_filter_out_columns)}/'
+                f'{len(self.to_filter_out)} variables'
+            )
+        if self.verbose > 1 and sum(to_filter_out_columns):
+            print(list(x.columns[to_filter_out_columns]))
+        return x[x.columns[~to_filter_out_columns]]
 
 
 class StaticFilter(Filter):
@@ -52,7 +57,9 @@ class KeepFilter(StaticFilter):
         super().__init__(verbose=verbose)
 
     def fit(self, x, y=None):
-        self.to_filter_out = ~x.columns.isin(self.to_keep)
+        self.to_filter_out = x.columns[
+            ~x.columns.isin(self.to_keep)
+        ]
         return self
 
 
@@ -63,7 +70,9 @@ class LowCountsFilter(DynamicFilter):
         super().__init__(verbose=verbose)
     
     def fit(self, x, y=None):
-        self.to_filter_out = (x != x.median()).sum() <= self.ratio * len(x)
+        self.to_filter_out = x.columns[
+            (x != x.median()).sum() <= self.ratio * len(x)
+        ]
         return self
 
     
@@ -74,7 +83,9 @@ class LowVarianceFilter(DynamicFilter):
         super().__init__(verbose=verbose)
     
     def fit(self, x, y=None):
-        self.to_filter_out = x.var() < x.var().quantile(self.quantile)
+        self.to_filter_out = x.columns[
+            x.var() < x.var().quantile(self.quantile)
+        ]
         return self
 
 
@@ -101,8 +112,8 @@ class RSideNormalizer(TransformerMixin):
     def transform(self, data):
         assert len(data.columns)
         self.kwargs['subset'] = data.index
-        self.kwargs['subset_rows'] = data.columns
+        #self.kwargs['subset_rows'] = data.columns
         # here we go to R and back
         normalized = self.func(self.omic, **self.kwargs).T
-
+        #print(normalized)
         return normalized

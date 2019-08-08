@@ -230,13 +230,13 @@ mean_vs_coefficients = function(coeffs, n=10, transformation=identity, fdr_thres
 }
 
 
-coefficients_volcano_plot = function(coeffs, n=10, transformation=identity) {
+coefficients_volcano_plot = function(coeffs, n=10, transformation=identity, p_value='p_value') {
     coeffs$is_frequent = coeffs$selected_in > 0.5
     coeffs$gene = rownames(coeffs)
-    top_coeffs = select_coeffs(coeffs, n, descending=T)
+    top_coeffs = select_coeffs(coeffs, n, by=p_value, descending=T)
     
     (
-        ggplot(coeffs, aes(y=mean, x=-log10(p_value)))
+        ggplot(coeffs, aes_string(y='mean', x=paste0('-log10(', p_value, ')')))
         + geom_errorbar(aes(ymin=mean-ci, ymax=mean+ci), color='grey40')
         + geom_point(
             aes(
@@ -269,7 +269,7 @@ plot_roc_auc = function(
     roc_auc, random_ci=FALSE, annotate_lines=FALSE,
     annotation_x=0.5, ci=TRUE, mean_auc=FALSE,
     annotation_at=0.05, annotation_nudge_x=NULL,
-    label=TRUE
+    label=TRUE, table=FALSE
 ) {
     
     if(is.null(roc_auc$group))
@@ -307,18 +307,18 @@ plot_roc_auc = function(
         function(x) {x[[ceiling(annotation_at * x_steps)]]}
     )$x
 
-    annotate = if (label) ggrepel::geom_label_repel else ggrepel::geom_text_repel
+    annotate_line = if (label) ggrepel::geom_label_repel else ggrepel::geom_text_repel
     
     if (annotate_lines)
         p = (p
-            + annotate(
+            + annotate_line(
                 data=grouped,
                 aes(
                     x=annotation_x,
                     label=paste0(
                         group,
                         ', AUC: ',
-                        round(auc, 3),
+                        round(pooled_auc, 3),
                         ' \U00B1 ',
                         round(std_auc, 2)
                     ),
@@ -344,15 +344,50 @@ plot_roc_auc = function(
     p = (p
         + geom_line(aes(y=true_positive_mean, color=group), key_glyph='timeseries')
     )
-    
     if (mean_auc) {
         p = (
             p + annotate(
                 'text',
                 y=mean(roc_auc$true_positive_mean), x=0.5,
-                label=paste('AUC =', round(roc_auc$mean_auc, 3), '\U00B1', round(roc_auc$std_auc, 2)),
+                label=paste('AUC =', round(roc_auc$pooled_auc, 3), '\U00B1', round(roc_auc$std_auc, 2)),
                 check_overlap=T
             )
+        )
+    }
+    
+    if(table) {
+        mytheme <- gridExtra::ttheme_default(
+        core = list(fg_params=list(cex = 2.0)),
+        colhead = list(fg_params=list(cex = 1.0)),
+        rowhead = list(fg_params=list(cex = 1.0)))
+        
+        df = grouped[,c('pooled_auc', 'average_auc')]
+        df = round(df, 3)
+        df$ci = paste(
+            round(grouped$average_auc_ci_lower, 3), '-', round(grouped$average_auc_ci_upper, 3)
+        )
+        colnames(df) = c('AUC', 'AUC', 'AUC 95% CI')
+        
+        rownames(df) = grouped$group
+        table_theme = gridExtra::ttheme_minimal(
+            core = list(fg_params=list(cex = 0.9), bg_params=list(fill='grey97')),
+            colhead = list(fg_params=list(cex = 0.9)),
+            rowhead = list(fg_params=list(cex = 0.9))
+        )
+        table_grid = gridExtra::tableGrob(
+            df, theme=table_theme
+        )
+        header <- gridExtra::tableGrob(
+            df[1, 1:2], theme=table_theme,
+            rows=NULL, cols=c('Pooled', 'Averaged')
+        ) 
+
+        merged_table <- gridExtra::combine(header[1,], table_grid, along=2)
+        merged_table$layout[1:4 , c("l", "r")] <- list(c(2, 3), c(2, 4))
+        
+        p = p + annotation_custom(
+            merged_table,
+            xmin=0.4, xmax=0.75, ymin=0.05 * nrow(df) + 0.07, ymax=0
         )
     }
     

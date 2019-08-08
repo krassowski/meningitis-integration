@@ -1,15 +1,24 @@
 from functools import partial
-from pandas import DataFrame
+from statistics import mean
+
+from pandas import DataFrame, Series
 import numpy as np
 from scipy import interp
 from sklearn import metrics
-from helpers.r import r_function
+from helpers.r import r_function, r
+from tqdm.auto import tqdm
 
+
+r('library(pROC)')
+r('library(cvAUC)')
 
 test_roc = partial(r_function, 'roc.test')
-auc_ci = partial(r_function, 'ci')
+auc = partial(r_function, 'auc')
 ci_se = partial(r_function, 'ci.se')
+ci_auc = partial(r_function, 'ci.auc')
 roc_object = partial(r_function, 'roc')
+ci_cv_auc = partial(r_function, 'ci.cvAUC')
+cv_auc = partial(r_function, 'cvAUC')
 power_roc_test = partial(r_function, 'power.roc.test')
 
 
@@ -46,7 +55,7 @@ def compare_roc_curves(
     return p, power_report
 
 
-def roc_auc_plot_data(probabilities, true_responses):
+def roc_auc_plot_data(probabilities, true_responses, boot_n=200):
     """Based on the official plot_roc_crossval example
     which is © 2007 - 2019, scikit-learn developers,
     and distributed under the terms of BSD License.
@@ -57,32 +66,57 @@ def roc_auc_plot_data(probabilities, true_responses):
 
     tprs = []
     aucs = []
-    mean_fpr = np.linspace(0, 1, len(true_responses))
+    #proc_aucs = []
+    sensitivity_ci_lower = []
+    sensitivity_ci_upper = [] 
+    
+    mean_fpr = np.linspace(0, 1, max(max(
+        len(t) for t in true_responses
+    ), 100))
 
     random_tprs = []
     random_aucs = []
     
+
+    #for p, t in tqdm(zip(probabilities, true_responses), total=len(true_responses)):
     for p, t in zip(probabilities, true_responses):
-        fpr, tpr, threshold = metrics.roc_curve(
-            t, p
-        )
-        tprs.append(interp(mean_fpr, fpr, tpr))
+
+        roc = roc_object(Series(t), Series(p), quiet=True)
+
+        # this takes too long...
+        #sensitivity_ci_estimate = ci_se(
+        #    roc, specificities=mean_fpr,
+        #    **{'boot.n': boot_n}
+        #)
+
+        # TODO: enable parallel backend for ci_se?                
+
+        # sensitivity_ci_lower.append(sensitivity_ci_estimate[:,0])
+        # sensitivity_ci_upper.append(sensitivity_ci_estimate[:,2])
+        # sensitivity_ci_median.append(sensitivity_ci_estimate[:,1])
+
+        fpr, tpr, threshold = metrics.roc_curve(t, p)
+        interpolated_tpr = interp(mean_fpr, fpr, tpr)
+        tprs.append(interpolated_tpr)
         tprs[-1][0] = 0.0
         aucs.append(metrics.auc(fpr, tpr))
-        
-        # random
-        #np.mean(t)
-        #class_impalance
-        fpr, tpr, threshold = metrics.roc_curve(
+
+        random_fpr, random_tpr, random_threshold = metrics.roc_curve(
             t, np.repeat(1, len(t))
         )
-        random_tprs.append(interp(mean_fpr, fpr, tpr))
-        random_tprs[-1][0] = 0.0
-        random_aucs.append(metrics.auc(fpr, tpr))
         
+        random_tprs.append(interp(mean_fpr, random_fpr, random_tpr))
+        random_tprs[-1][0] = 0.0
+        random_aucs.append(metrics.auc(random_fpr, random_tpr))
+    
     mean_tpr = np.mean(tprs, axis=0)
     mean_tpr[-1] = 1.0
+
     mean_auc = metrics.auc(mean_fpr, mean_tpr)
+    
+    ci_cv = ci_cv_auc(probabilities, true_responses)
+    assert ci_cv.rx2('cvAUC') == mean(aucs)
+
     std_auc = np.std(aucs)
     std_tpr = np.std(tprs, axis=0)
 
@@ -91,16 +125,21 @@ def roc_auc_plot_data(probabilities, true_responses):
     
     random_std_tpr = np.std(tprs, axis=0)
     random_mean_tpr = np.mean(random_tprs, axis=0)
-    
+
     return DataFrame(dict(
         x_linear_space=mean_fpr,
         true_positive_mean=mean_tpr,
         random_expected=random_mean_tpr,
-        mean_auc=mean_auc,
-        auc=aucs,
+        pooled_auc=mean_auc,
+        average_auc=mean(aucs),
         std_auc=std_auc,
+        average_auc_ci_lower=ci_cv.rx2('ci')[0],
+        average_auc_ci_upper=ci_cv.rx2('ci')[1],
+        average_auc_se=ci_cv.rx2('se'),
         random_expected_lower_ci=np.maximum(random_mean_tpr - random_std_tpr, 0),
         random_expected_upper_ci=np.minimum(random_mean_tpr + random_std_tpr, 1),
         true_positive_upper_ci=tprs_upper,
         true_positive_lower_ci=tprs_lower
+        #true_positive_lower_ci=np.flip(np.mean(sensitivity_ci_lower, axis=0)),
+        #true_positive_upper_ci=np.flip(np.mean(sensitivity_ci_upper, axis=0)),
     ))
