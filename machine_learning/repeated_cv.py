@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from random import shuffle
+from types import SimpleNamespace
 from typing import List, Dict
 
 from pandas import DataFrame, Series
@@ -38,9 +39,8 @@ class CrossValidation:
         self, pipeline: TwoBlockPipeline, n=100,
         use_seed: bool = True, stratify: bool = True,
         only_coefficients: bool = False, stripped: bool = False,
-        data_comes_from_normalizer: bool = True,
         permute: bool = False, progress_bar: bool = True, verbose: bool = True,
-        coefficients: Dict[str, str] = {'x': 'coef_'}
+        coefficients: Dict[str, str] = {'x': 'coef_'}, early_normalization=False
     ) -> Result:
 
         cv_results = Result(
@@ -104,17 +104,24 @@ class CrossValidation:
                 test[block] = train_data[block].loc[test_patients]
 
             split_pipeline: TwoBlockPipeline = clone(pipeline)
-            split_pipeline.fit(*train.values())
+
+            if early_normalization:
+                split_pipeline.transformed_blocks = {
+                    name: block.loc[train_patients]
+                    for name, block in pipeline.transformed_blocks.items()
+                }
+                for name, p in pipeline.block_pipelines.items():
+                    setattr(split_pipeline, name, p)
+                split_pipeline.combine.fit(*split_pipeline.transformed_blocks.values())
+            else:
+                split_pipeline.fit(*train.values())
+
             self.estimators.append(split_pipeline)
 
             if verbose > 1:
                 print('Applying dynamic filters to train get filtered columns')
 
-            coefficients_manager.add(
-                split_matrices=split_pipeline.transformed_blocks,
-                pipeline=split_pipeline,
-                data_comes_from_normalizer=data_comes_from_normalizer
-            )
+            coefficients_manager.add(split_matrices=split_pipeline.transformed_blocks, pipeline=split_pipeline)
 
             if only_coefficients:
                 continue
@@ -228,8 +235,7 @@ class CrossValidationResult:
 
 def repeated_cross_validation(
     pipeline: TwoBlockPipeline, train_data: List[DataFrame],
-    response, data_comes_from_normalizer=True,
-    case_class='Tuberculosis',
+    response, case_class='Tuberculosis',
     n=1000, use_seed=False, stratify=True,
     permute=False, progress_bar=True,
     only_coefficients=False, stripped=False,
@@ -241,41 +247,43 @@ def repeated_cross_validation(
     assert case_class in set(response)
 
     train_dataset = MultiBlockDataSet(data=train_data, case_class=case_class, response=response)
-    test_dataset = MultiBlockDataSet(data=test_data, case_class=case_class, response=response)
+    test_dataset = MultiBlockDataSet(data=test_data if test_data is not None else [], case_class=case_class, response=response)
+
+    if early_normalization:
+        pipeline.fit_transform_blocks(train_dataset.x, train_dataset.y)
 
     cross_validation = CrossValidation(train_dataset=train_dataset)
 
     cv_results = cross_validation.cross_validate(
         pipeline,
         n=n, use_seed=use_seed, stratify=stratify, only_coefficients=only_coefficients,
-        stripped=stripped, data_comes_from_normalizer=data_comes_from_normalizer,
-        permute=permute, progress_bar=progress_bar, verbose=verbose,
-        coefficients=coefficients
+        stripped=stripped, permute=permute, progress_bar=progress_bar, verbose=verbose,
+        coefficients=coefficients, early_normalization=early_normalization
     )
 
-    sub_sampling_test_result = cross_validation.validate(test_dataset)
+    sub_sampling_test_result = cross_validation.validate(test_dataset) if test_data is not None else None
 
     if verbose:
         print('Re-fitting on the entire dataset...')
 
     # TODO: make it work with 1D
-    pipeline.fit(train_dataset.x, train_dataset.y)
+    if early_normalization:
+        pipeline.combine.fit(*pipeline.transformed_blocks.values())
+    else:
+        pipeline.fit(train_dataset.x, train_dataset.y)
 
     test_result = Result.from_test_set(
         pipeline=pipeline,
         test_set=test_dataset,
         train_set=train_dataset
-    ) if test_dataset.data is not None else None
+    ) if test_data is not None else None
 
     coefficients_manager = CoefficientsManager(
         # TODO: the abundance matrices should be taken straight from the dataset...
         #  the internal data storage could be refactored to Dict[str, DataFrame]
         coefficients, abundance_matrices={'x': train_dataset.x, 'y': train_dataset.y}
     )
-    coefficients_manager.add(
-        split_matrices=pipeline.transformed_blocks,
-        pipeline=pipeline, data_comes_from_normalizer=data_comes_from_normalizer
-    )
+    coefficients_manager.add(split_matrices=pipeline.transformed_blocks, pipeline=pipeline)
     coefficients_manager.concatenate()
 
     return CrossValidationResult(
@@ -298,24 +306,21 @@ def repeated_cross_validation(
     )
 
 
-def null_distributions_over_cv(
-    pipeline, omic, patients_filter, response, early_normalization,
-    permutations=100,
-    **kwargs
-):
+def null_distributions_over_cv(pipeline, omic, response, block, permutations=100, **kwargs):
     """Null distributions for an alternative hypothesis that the:
     a) mean coefficient value over cross validations is not random
     b) mean contribution value over cross validations is not random
     
     Arguments:
         pipeline: the extended pipeline
-        *args: passed to cross_validated_lasso
+        omic: passed to cross_validated_lasso
+        response: passed to cross_validated_lasso
+        block: x or y
         permutations: number of permutations
         **kwargs: passed to cross_validated_lasso
     """
 
     groups = {'test', 'cross_validation'}
-
     kinds = {'coefficients', 'contributions'}
 
     nulls = {
@@ -326,13 +331,9 @@ def null_distributions_over_cv(
         for group in groups
     }
 
-    omic_filtered = pipeline.preprocess(omic, patients_filter, early_normalization)
-    pipeline = pipeline.simplified(early_normalization)
-
     for i in tqdm(range(permutations)):
         result = repeated_cross_validation(
-            pipeline, omic_filtered, patients_filter,
-            data_comes_from_normalizer=True,
+            pipeline, omic, response=response,
             permute=True, progress_bar=False,
             only_coefficients=True, stripped=True,
             **kwargs
@@ -341,12 +342,18 @@ def null_distributions_over_cv(
         for group in groups:
             parent = result if group == 'test' else result.cross_validation
             for kind in kinds:
-                nulls[kind].append(getattr(parent, kind))
+                store: AttributesStore = getattr(parent, kind)
+                nulls[group][kind].append(
+                    getattr(store, block).data
+                )
 
-    return {
-        f'mind_{kind}': pd.concat(values, axis=1)
-        for kind, values in nulls.items()
-    }
+    return SimpleNamespace(**{
+        group: SimpleNamespace(**{
+            f'{kind}': pd.concat(values, axis=1)
+            for kind, values in kinds.items()
+        })
+        for group, kinds in nulls.items()
+    })
 
 
 def performance_comparison(

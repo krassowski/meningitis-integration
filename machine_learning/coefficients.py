@@ -159,7 +159,7 @@ class CoefficientsManager:
         self.values = {matrix: [] for matrix in coefficients}
         self.concatenated = False
 
-    def add(self, split_matrices, pipeline, data_comes_from_normalizer):
+    def add(self, split_matrices, pipeline):
         for matrix, attribute in self.matrix_to_attribute.items():
             matrix_data = split_matrices[matrix]
 

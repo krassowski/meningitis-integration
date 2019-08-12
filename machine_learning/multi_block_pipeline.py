@@ -46,9 +46,12 @@ class GeneralizedBlockPipeline(ABC, BaseEstimator):
     def block_pipelines(self) -> Dict[BlockId, Pipeline]:
         pass
 
-    def fit(self, *args):
+    def fit_transform_blocks(self, *args):
         for (block_id, block_pipeline), block_data in zip(self.block_pipelines.items(), args):
             self.transformed_blocks[block_id] = block_pipeline.fit_transform(block_data)
+
+    def fit(self, *args):
+        self.fit_transform_blocks(*args)
         self.combine.fit(*self.transformed_blocks.values())
         return self
 
@@ -74,7 +77,7 @@ class GeneralizedBlockPipeline(ABC, BaseEstimator):
 @dataclass(config=ValidationConfig)
 class MultiBlockPipeline(GeneralizedBlockPipeline):
     """Intended for N-block integration"""
-    block_pipelines: List[Pipeline]
+    block_pipelines: Dict[str, Pipeline]
 
 
 @dataclass(config=ValidationConfig)
