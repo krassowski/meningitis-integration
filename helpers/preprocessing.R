@@ -437,7 +437,7 @@ normalize_abundance = function(
         )
         # TODO: should I recompute norm factors now?
     }
-    # do not transfrom data corrected by DESeq2, those are already transformed 
+    # do not transform data corrected by DESeq2, those are already transformed
     if(
         !is.null(trend_correction) && (!trend_correction %in% deseq_transfroms)
     )

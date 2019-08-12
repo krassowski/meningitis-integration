@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from functools import partial
 from math import sqrt
+from typing import Type
 
 import pandas as pd
 from pandas import DataFrame, Series
@@ -8,6 +8,8 @@ from rpy2.robjects import r
 
 from helpers.p_values import gpd_p_value
 from helpers.r import p_adjust, r_function, r_function_numpy
+
+from .data_classes import AttributesStore, dataclass
 
 
 @dataclass
@@ -20,7 +22,7 @@ class Coefficients:
         return df
 
     def extract_null(self, null_distributions):
-        return null_distributions['mean_contributions']
+        return null_distributions['contributions']
 
     def __init__(
         self, coeffs_across_cv: DataFrame, abundance: DataFrame = None,
@@ -145,4 +147,33 @@ class Contributions(Coefficients):
         return df.abs() / df.abs().sum()
 
     def extract_null(self, null_distributions):
-        return null_distributions['mean_coefficients']
+        return null_distributions['coefficients']
+
+
+class CoefficientsManager:
+
+    def __init__(self, coefficients, abundance_matrices):
+        self.abundance_matrices = abundance_matrices
+        self.matrix_to_attribute = coefficients
+        assert not (coefficients.keys() - {'x', 'y'})
+        self.values = {matrix: [] for matrix in coefficients}
+        self.concatenated = False
+
+    def add(self, split_matrices, pipeline, data_comes_from_normalizer):
+        for matrix, attribute in self.matrix_to_attribute.items():
+            matrix_data = split_matrices[matrix]
+
+            self.values[matrix].append(
+                pipeline.get_coefficients(matrix_data.columns, coefficient=attribute)
+            )
+
+    def concatenate(self):
+        for matrix in self.matrix_to_attribute:
+            self.values[matrix] = pd.concat(self.values[matrix], axis=1)
+        self.concatenated = True
+
+    def to_store(self, subclass: Type, skip_compute: bool):
+        assert self.concatenated
+        return AttributesStore.from_dicts(
+            self.values, self.abundance_matrices, subclass=subclass, skip_compute=skip_compute
+        )

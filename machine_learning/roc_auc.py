@@ -58,17 +58,23 @@ def compare_roc_curves(
 def roc_auc_plot_data(probabilities, true_responses):
 
     aucs, mean_fpr, random_tprs, tprs = compute_cv_statistics(probabilities, true_responses)
-
     mean_tpr = np.mean(tprs, axis=0)
-    mean_tpr[-1] = 1.0
 
     mean_auc = metrics.auc(mean_fpr, mean_tpr)
     
     ci_cv = ci_cv_auc(probabilities, true_responses)
-    assert ci_cv.rx2('cvAUC') == mean(aucs)
+    cv_mean_auc = ci_cv.rx2('cvAUC')
+    if cv_mean_auc != mean(aucs):
+        print(f'Warning: AUC computed by cvAUC differs from mean: {cv_mean_auc} vs {mean(aucs)}')
 
     std_auc = np.std(aucs)
     std_tpr = np.std(tprs, axis=0)
+
+    # correct the visuals
+    mean_tpr[-1] = 1.0
+    for i in range(len(tprs)):
+        tprs[i][0] = 0.0
+    mean_tpr = np.mean(tprs, axis=0)
 
     tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
     tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
@@ -131,7 +137,6 @@ def compute_cv_statistics(probabilities, true_responses, boot_n=200):
         fpr, tpr, threshold = metrics.roc_curve(t, p)
         interpolated_tpr = interp(mean_fpr, fpr, tpr)
         tprs.append(interpolated_tpr)
-        tprs[-1][0] = 0.0
         aucs.append(metrics.auc(fpr, tpr))
 
         random_fpr, random_tpr, random_threshold = metrics.roc_curve(

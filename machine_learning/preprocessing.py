@@ -1,5 +1,22 @@
+from pandas import Series
 from sklearn.base import TransformerMixin
+from sklearn.base import BaseEstimator
 from types import FunctionType
+
+
+class ConditionsVectorizer(BaseEstimator):
+
+    def __init__(self, mapping, case_class):
+        self.mapping = mapping
+        self.case_class = case_class
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, x: Series):
+        classes = x.map(self.mapping)
+        assert len(set(classes)) == 2
+        return classes == self.case_class
 
 
 class Filter(TransformerMixin):
@@ -7,7 +24,7 @@ class Filter(TransformerMixin):
     def __init__(self, verbose=True):
         self.verbose = verbose
         self.to_filter_out = None
-        
+
     def transform(self, x):
         to_filter_out_columns = x.columns.isin(self.to_filter_out)
         if self.verbose:
@@ -18,6 +35,7 @@ class Filter(TransformerMixin):
             )
         if self.verbose > 1 and sum(to_filter_out_columns):
             print(list(x.columns[to_filter_out_columns]))
+
         return x[x.columns[~to_filter_out_columns]]
 
 
@@ -63,6 +81,20 @@ class KeepFilter(StaticFilter):
         return self
 
 
+class PreFilterLowestExpresion(KeepFilter):
+
+    def __init__(self, func, data, smallest_group_n, verbose=True):
+        self.n = smallest_group_n
+        self.original_data = data
+        to_keep = data.index[
+            Series(func(data, self.n, return_frame=False)) == 1
+            ]
+        super().__init__(
+            to_keep=to_keep,
+            verbose=verbose
+        )
+
+
 class LowCountsFilter(DynamicFilter):
 
     def __init__(self, ratio=1/3, verbose=True):
@@ -104,7 +136,7 @@ class RSideNormalizer(TransformerMixin):
         self.kwargs = kwargs
         self.func = func
     
-    def fit(self, data, response=None):
+    def fit(self, data, y=None):
         self.kwargs['subset'] = data.index
         self.kwargs['subset_rows'] = data.columns
         return self
@@ -112,8 +144,8 @@ class RSideNormalizer(TransformerMixin):
     def transform(self, data):
         assert len(data.columns)
         self.kwargs['subset'] = data.index
-        #self.kwargs['subset_rows'] = data.columns
+        # NOTE: subset_rows was previously commented out for some reason!
+        self.kwargs['subset_rows'] = data.columns
         # here we go to R and back
         normalized = self.func(self.omic, **self.kwargs).T
-        #print(normalized)
         return normalized

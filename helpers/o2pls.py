@@ -289,7 +289,7 @@ class O2PLS:
         'W_Yosc': 'W_Yosc'
     }
     
-    def __init__(self, max_iterations=200, algorithm='nipals', verbose=False, save_memory=False, **params):
+    def __init__(self, max_iterations=200, algorithm='nipals', verbose=False, predict_proba=None, save_memory=False, **params):
         """
         Args:
             max_iterations
@@ -298,6 +298,7 @@ class O2PLS:
             'max_iterations': max_iterations,
             'algorithm': algorithm,
             'verbose': verbose,
+            'predict_proba': predict_proba,
             **params
         }
         self.fitted = False
@@ -305,6 +306,9 @@ class O2PLS:
             name: partial(statistic.func, self)
             for name, statistic in O2PLSStatistic.statistics.items()
         })
+
+    def predict_proba(self, *args):
+        return getattr(self, self.params['predict_proba'])(*args)
 
     def calc_metrics(self, key='symbol', **kwargs):
         metrics = {}
@@ -451,9 +455,9 @@ class O2PLS:
         }).to_frame().T
 
     def __repr__(self):
-        n = self.params['joint_components']
-        nx = self.params['x_ortho_components']
-        ny = self.params['y_ortho_components']
+        n = self.params.get('joint_components', '?')
+        nx = self.params.get('x_ortho_components', '?')
+        ny = self.params.get('y_ortho_components', '?')
         return (
             f'<{"fitted " if self.fitted else ""}O2PLS model with: '
             f'{n} joint components, '
