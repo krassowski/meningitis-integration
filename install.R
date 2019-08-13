@@ -48,3 +48,5 @@ BiocManager::install("pROC", quiet=T)
 # install.packages('ggforce', quiet=T) - maybe use it for graphics later, right now not needed
 install.packages("cvAUC", quiet=T)
 install.packages('hdi', quiet=T)
+
+install.packages("ggnetwork", quiet=T)
