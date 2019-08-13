@@ -187,7 +187,7 @@ class Coefficients:
                 # average contribution of the pair when selected together
                 'weight': weights_graph[protein, other] / count,
             }
-            for (protein, other), count in tqdm(counts_co_selected_graph.items())
+            for (protein, other), count in counts_co_selected_graph.items()
         ])
 
         average_pair_frequency = (df.b.map(self.data['selected_in']) * df.a.map(self.data['selected_in']))

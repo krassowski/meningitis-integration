@@ -1,5 +1,6 @@
+from collections import Counter
 from dataclasses import dataclass, field
-from random import shuffle
+from random import shuffle, uniform
 from types import SimpleNamespace
 from typing import List, Dict
 
@@ -40,8 +41,15 @@ class CrossValidation:
         use_seed: bool = True, stratify: bool = True,
         only_coefficients: bool = False, stripped: bool = False,
         permute: bool = False, progress_bar: bool = True, verbose: bool = True,
-        coefficients: Dict[str, str] = {'x': 'coef_'}, early_normalization=False
+        coefficients: Dict[str, str] = {'x': 'coef_'}, early_normalization=False,
+        multi_scale=True, test_size_min=0.3, test_size_max=0.3, min_class_members=2
     ) -> Result:
+
+        assert test_size_max < 1 and test_size_min > 0
+        if multi_scale:
+            assert test_size_max != test_size_min
+        else:
+            assert test_size_max == test_size_min
 
         cv_results = Result(
             train_data=self.train_dataset,
@@ -78,6 +86,13 @@ class CrossValidation:
 
             ok = False
 
+            if multi_scale:
+                test_size = uniform(test_size_min, test_size_max)
+            else:
+                test_size = test_size_min
+
+            train_binary: Series
+            test_binary: Series
             while not ok:
                 (
                     train_binary, test_binary,
@@ -85,14 +100,19 @@ class CrossValidation:
                 ) = train_test_split(
                     patients_classes,
                     self.train_dataset.observations,
+                    test_size=test_size,
                     stratify=patients_classes if stratify else None,
                     random_state=seed if use_seed else None
                 )
                 seed += 1
 
-                if len(set(train_binary)) == 2 and len(set(test_binary)) == 2:
-                    # we have so few patients that we need to check if split
-                    # has at least one in each class...
+                # we have so few patients that we need to check if split
+                # has at least one in each class...
+                if (
+                    train_binary.value_counts(sort=False).min() >= min_class_members
+                    and
+                    test_binary.value_counts(sort=False).min() >= min_class_members
+                ):
                     ok = True
                 elif verbose:
                     print('Skipping a split with too few response samples')
@@ -117,9 +137,6 @@ class CrossValidation:
                 split_pipeline.fit(*train.values())
 
             self.estimators.append(split_pipeline)
-
-            if verbose > 1:
-                print('Applying dynamic filters to train get filtered columns')
 
             coefficients_manager.add(split_matrices=split_pipeline.transformed_blocks, pipeline=split_pipeline)
 
@@ -242,7 +259,9 @@ def repeated_cross_validation(
     early_normalization=False,
     verbose=False,
     test_data=None,
-    coefficients={'x': 'coef_'}
+    coefficients={'x': 'coef_'},
+    multi_scale=True, test_size_min=0.3, test_size_max=0.3,
+    min_class_members=2
 ) -> CrossValidationResult:
     assert case_class in set(response)
 
@@ -258,7 +277,9 @@ def repeated_cross_validation(
         pipeline,
         n=n, use_seed=use_seed, stratify=stratify, only_coefficients=only_coefficients,
         stripped=stripped, permute=permute, progress_bar=progress_bar, verbose=verbose,
-        coefficients=coefficients, early_normalization=early_normalization
+        coefficients=coefficients, early_normalization=early_normalization,
+        multi_scale=multi_scale, test_size_min=test_size_min, test_size_max=test_size_max,
+        min_class_members=min_class_members
     )
 
     sub_sampling_test_result = cross_validation.validate(test_dataset) if test_data is not None else None
