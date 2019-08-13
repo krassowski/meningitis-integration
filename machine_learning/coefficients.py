@@ -1,10 +1,13 @@
+from collections import defaultdict
 from functools import partial
-from math import sqrt
+from math import sqrt, log, log2
 from typing import Type
 
 import pandas as pd
+from numpy import sign
 from pandas import DataFrame, Series
 from rpy2.robjects import r
+from tqdm.auto import tqdm
 
 from helpers.p_values import gpd_p_value
 from helpers.r import p_adjust, r_function, r_function_numpy
@@ -140,11 +143,68 @@ class Coefficients:
         print('Selected', len(selected_coeffs), 'coefficients different from zero in at least', non_zero_ratio_required, 'repeats')
         return selected_coeffs
 
+    def co_selection_network(self, contribution_threshold=0, selection_threshold=0):
+        # frequent interactions
+        counts_co_selected_graph = defaultdict(int)
+        # strong interactions
+        weights_graph = defaultdict(float)
+        sign_agreement_graph = defaultdict(int)
+
+        coeffs = self.coeffs_across_cv
+
+        for cv_split_id in tqdm(coeffs.columns):
+            cv_split = coeffs[cv_split_id]
+            for i, protein in enumerate(cv_split.index):
+                a = cv_split.loc[protein]
+
+                if a == 0 or abs(a) < contribution_threshold:
+                    continue
+
+                if selection_threshold and self.data['selected_in'].loc[protein] < selection_threshold:
+                    continue
+
+                a_sign = sign(a)
+                for other in cv_split.index[i + 1:]:
+
+                    b = cv_split.loc[other]
+
+                    pair = protein, other
+
+                    if selection_threshold and self.data['selected_in'].loc[other] < selection_threshold:
+                        continue
+
+                    weights_graph[pair] += abs(a) + abs(b)
+                    counts_co_selected_graph[pair] += 1
+                    sign_agreement_graph[pair] += (a_sign == sign(b))
+
+        df = DataFrame([
+            {
+                'a': other,
+                'b': protein,
+                'count': count,
+                'frequency': count / len(coeffs.columns),
+                'sign_agreement': sign_agreement_graph[protein, other],
+                # average contribution of the pair when selected together
+                'weight': weights_graph[protein, other] / count,
+            }
+            for (protein, other), count in tqdm(counts_co_selected_graph.items())
+        ])
+
+        average_pair_frequency = (df.b.map(self.data['selected_in']) * df.a.map(self.data['selected_in']))
+        df['log2_frequency_ratio'] = (
+            df['frequency'] / average_pair_frequency
+        ).apply(log2)
+
+        average_pair_weight = (df.b.map(self.data['mean']) + df.a.map(self.data['mean'])) / 2
+        df['relative_weight'] = df['weight'] / average_pair_weight
+
+        return df
+
 
 class Contributions(Coefficients):
 
     def transform(self, df):
-        return df.abs() / df.abs().sum()
+        return df.abs() / df.abs().sum() * df.apply(sign)
 
     def extract_null(self, null_distributions):
         return null_distributions['coefficients']

@@ -186,7 +186,6 @@ mean_vs_coefficients = function(coeffs, n=10, transformation=identity, fdr_thres
         + guides(
             fill=guide_legend(override.aes=list(shape=21)),
             shape=guide_legend(override.aes=list(fill='brown'))
-        
         )
     )
 }
@@ -398,4 +397,119 @@ plot_roc_auc = function(
         + nice_theme
     )
     p
+}
+                                                     
+                                                     
+library(ggnetwork)
+
+frequency_line = list(
+    # greater equal
+    '\U2265 0.5'='dotted',
+    '\U2265 0.6'='dotdash',
+    '\U2265 0.7'='dashed',
+    '\U2265 0.8'='longdash',
+    '\U2265 0.9'='solid'
+)
+
+select_edges = function(cn, key, q, names) {
+    top = cn[cn[[key]] >= quantile(cn[[key]], 1 - q), ]
+    top$group = names[1]
+    bottom = cn[cn[[key]] <= quantile(cn[[key]], q), ]
+    bottom$group = names[2]
+    df = rbind(top, bottom)
+    df$edge_label = df[[key]]
+    df$edge_label_group = tools::toTitleCase(gsub('_', ' ', key))
+    df
+}
+
+plot_contributions_network = function(
+    cn, cn_contributions, q=0.05, conditions=c('Tuberculosis', 'Cryptococcal')
+) {
+
+    cn = rbind(
+        select_edges(
+            cn, 'frequency', q,
+            c('Most frequently co-selected', 'Least frequently co-selected')
+        ),
+        select_edges(
+            cn, 'log2_frequency_ratio', q,
+            c('Co-selected more frequently than expected', 'Co-selected less frequently than expected')
+        )
+    )
+    
+    cn_contributions$condition = as.character(ifelse(
+        cn_contributions$mean > 0,
+        conditions[1], conditions[2]
+    ))
+    cn_contributions$gene = as.character(cn_contributions$gene)
+
+    net = ggnetwork(
+        network(
+            cn,
+            vertex.attr=cn_contributions,
+            matrix.type='edgelist',
+            ignore.eval=F,
+            directed=F
+        ),
+        by='group'
+    )
+    
+    new_net = c()
+    for (group in unique(net$group)) {
+        n = net[net$group == group,]
+        
+        edges = n[!is.na(n$frequency),]
+        genes_with_edges = c(edges$a, edges$b)
+        selected = n[n$gene %in% genes_with_edges,]
+        new_net = rbind(new_net, selected)
+    }
+    
+    (
+        ggplot(
+            new_net,
+            aes(x=x, y=y, xend=xend, yend=yend)
+        )
+        + facet_wrap(~ group, scale='free', ncol=2)
+        + geom_edges(color="grey50", curvature=0.01)
+        + geom_edgetext(
+            aes(
+                label=round(edge_label, 2),
+                fill=edge_label_group
+            ),
+            color='black',
+            key_glyph='rect'
+        )
+        + scale_fill_manual(name='Edge shows', values=c('#FDD4D0', 'grey90'))
+        + geom_nodelabel_repel(
+            aes(
+                color=condition,
+                label=gene
+            ),
+            fontface='bold',
+            box.padding = unit(0.7, "lines"),
+            direction='y',
+            segment.color='grey80',
+            key_glyph='blank'
+        )
+        + geom_nodes(aes(size=selected_in, color=condition))
+        + scale_size_area(name='Selected in')
+        + scale_color_manual(values=patient_colors$Meningitis, name='High in')
+        + nice_theme
+        + theme(
+            axis.line=element_blank(),
+            axis.text.x=element_blank(),
+            axis.text.y=element_blank(),
+            axis.ticks=element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank(),
+            panel.background=element_blank(),
+            panel.grid.major=element_blank(),
+            panel.grid.minor=element_blank(),
+            plot.background=element_blank()
+        )
+        + guides(
+            size=guide_legend(override.aes=list(color='brown')),
+            color=guide_legend(override.aes=list(size=4))
+        )
+    )
 }
