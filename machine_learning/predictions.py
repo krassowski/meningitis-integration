@@ -10,6 +10,9 @@ from .data_classes import MultiBlockDataSet, dataclass
 from .multi_block_pipeline import TwoBlockPipeline
 from .roc_auc import roc_auc_plot_data, compute_cv_statistics
 
+# TODO: something is amiss with pydantic here?
+from dataclasses import dataclass
+
 
 @dataclass
 class Result:

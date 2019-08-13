@@ -1,4 +1,3 @@
-from collections import Counter
 from dataclasses import dataclass, field
 from random import shuffle, uniform
 from types import SimpleNamespace
@@ -69,7 +68,12 @@ class CrossValidation:
             for train_block in train_data.values()
         )
 
-        coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=train_data)
+        if early_normalization:
+            abundance_transformed = pipeline.transformed_blocks
+        else:
+            abundance_transformed = clone(pipeline).fit_transform_blocks(*train_data).transformed_blocks
+
+        coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=abundance_transformed)
 
         # shuffle split
         seed = 0
@@ -299,11 +303,7 @@ def repeated_cross_validation(
         train_set=train_dataset
     ) if test_data is not None else None
 
-    coefficients_manager = CoefficientsManager(
-        # TODO: the abundance matrices should be taken straight from the dataset...
-        #  the internal data storage could be refactored to Dict[str, DataFrame]
-        coefficients, abundance_matrices={'x': train_dataset.x, 'y': train_dataset.y}
-    )
+    coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=pipeline.transformed_blocks)
     coefficients_manager.add(split_matrices=pipeline.transformed_blocks, pipeline=pipeline)
     coefficients_manager.concatenate()
 

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from math import sqrt, log, log2
+from math import sqrt, log2
 from typing import Type
 
 import pandas as pd
@@ -137,8 +137,11 @@ class Coefficients:
             contribution.values * pd.concat([Series(cv_auc) for _ in range(len(coeffs))], axis=1).T.values
         ).mean(axis=1)
 
-    def select(self, non_zero_ratio_required=0.05):
+    def select(self, non_zero_ratio_required=None):
         coeffs = self.data
+        if non_zero_ratio_required is None:
+            print('Adjusting non-zero ratio required to keep all significant coeffs')
+            non_zero_ratio_required = coeffs[coeffs.fdr < 0.05].selected_in.min()
         selected_coeffs = coeffs[coeffs.selected_in >= non_zero_ratio_required]
         print('Selected', len(selected_coeffs), 'coefficients different from zero in at least', non_zero_ratio_required, 'repeats')
         return selected_coeffs

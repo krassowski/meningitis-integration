@@ -3,7 +3,7 @@ from dataclasses import field
 
 from pydantic import BaseConfig
 from pydantic.dataclasses import dataclass
-from typing import List, Callable, Union, Dict, Type
+from typing import Callable, Union, Dict, Type
 
 from pandas import Series, DataFrame
 from sklearn.base import BaseEstimator
@@ -49,6 +49,7 @@ class GeneralizedBlockPipeline(ABC, BaseEstimator):
     def fit_transform_blocks(self, *args):
         for (block_id, block_pipeline), block_data in zip(self.block_pipelines.items(), args):
             self.transformed_blocks[block_id] = block_pipeline.fit_transform(block_data)
+        return self
 
     def fit(self, *args):
         self.fit_transform_blocks(*args)
@@ -118,6 +119,4 @@ class OneBlockPipeline(GeneralizedBlockPipeline):
 def predict_proba(pipeline: GeneralizedBlockPipeline, dataset: MultiBlockDataSet):
     """This is intended to work with standard sklearn API (usually for a single block)"""
     p = pipeline.call('predict_proba', pipeline.x.transform(dataset.x))
-    return Series(p[:, 1], index=dataset.observations)
-
-
+    return Series(p[:, 1], index=pipeline.y.transform(dataset.y))
