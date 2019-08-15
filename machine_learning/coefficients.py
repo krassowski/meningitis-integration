@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from math import sqrt, log2
+from math import sqrt, log2, log
 from typing import Type
 
 import pandas as pd
@@ -131,11 +131,14 @@ class Coefficients:
             self.add_hdi_significance(**kwargs)
 
     def add_weighted_auc(self, cv_auc: DataFrame):
+        """Pass result.sub_sampling_test_results.cv_auc here"""
         coeffs = self.data
         contribution = self.coeffs_across_cv.abs() / self.coeffs_across_cv.abs().sum()
+        # otherwise this is useless
+        assert len(set(cv_auc)) > 1
         coeffs['weighted_auc'] = (
             contribution.values * pd.concat([Series(cv_auc) for _ in range(len(coeffs))], axis=1).T.values
-        ).mean(axis=1)
+        ).sum(axis=1) / (self.coeffs_across_cv != 0).sum(axis=1)
 
     def select(self, non_zero_ratio_required=None):
         coeffs = self.data
