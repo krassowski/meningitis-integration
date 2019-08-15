@@ -1,6 +1,7 @@
 from pandas import DataFrame
 import pandas as pd
 from sklearn.cross_decomposition import PLSRegression, PLSCanonical
+from sklearn.model_selection import KFold
 
 
 def pls_wrapper(pls):
@@ -41,11 +42,17 @@ PandasPLSRegression = pls_wrapper(PLSRegression)
 PandasPLSCanonical = pls_wrapper(PLSCanonical)
 
 
+def n_splits(cv, X):
+    if isinstance(cv, int):
+        cv = KFold(cv)
+    return cv.get_n_splits(X)
+
+
 def format_grid_results(reg, X=None, strip_last_step_prefix=True):
     statistics = {
         'split' + str(split) + '_test_' + statistic: statistic
         for statistic in reg.scoring.keys()
-        for split in range(reg.cv.get_n_splits(X))
+        for split in range(n_splits(reg.cv, X))
     }
     
     params = [k for k in reg.cv_results_.keys() if k.startswith('param_')]
