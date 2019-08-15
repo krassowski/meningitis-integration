@@ -79,7 +79,7 @@ def modeled_variation(residuals, matrix):
     return 1 - ratio_of_sums_of_squares(residuals, matrix)
 
 
-def combine_statistic(func, a, b, how='average', m1=True):
+def combine_statistic(func, a, b, how='average'):
     if isinstance(a, DataFrame):
         a = a.values
     if isinstance(b, DataFrame):
@@ -91,7 +91,7 @@ def combine_statistic(func, a, b, how='average', m1=True):
             return mean([func(a[i, :], b[i, :]) for i in range(a.shape[0])])
         else:
             return 1 - product([1 - func(a[i, :], b[i, :]) for i in range(a.shape[0])])
-    except:
+    except Exception:
         print(a)
         print(b)
         print(func)
@@ -363,7 +363,14 @@ class O2PLS:
         self.F = Y - self.predict_y(X)
         self.fitted = True
         return self
-    
+
+    def fit_transform(self, X, Y):
+        self.fit(X, Y)
+        return {
+            'joint_X': self.joint_X,
+            'joint_Y': self.joint_Y
+        }
+
     @property
     def x_coefficients(self) -> DataFrame:
         return maybe_add_columns(self._x_coefficients, self.Y)            
@@ -410,7 +417,7 @@ class O2PLS:
 
         # when there is only one LV, compute in R as:
         # - in Python it takes two A4 pages to write scalar-compatible multiplication (np.dot etc)
-        # - it is not as expensive to transfer "small" matrices and matrices for single LV are the smallest possilbe
+        # - it is not as expensive to transfer "small" matrices and matrices for single LV are the smallest possible
         if self.B_U.shape == (1, 1):
             return enforce_2d(self.predict_x_in_R(Y))
 
