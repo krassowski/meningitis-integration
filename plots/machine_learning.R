@@ -322,8 +322,8 @@ plot_roc_auc = function(
         roc_auc$true_positive_mean,
         list(g=roc_auc$group),
         function(x) {x[[ceiling(annotation_at * x_steps)]]}
-    )$x
-
+    )
+    lowest_fpr = lowest_fpr[match(grouped$group, lowest_fpr$g),]$x
     annotate_line = if (label) ggrepel::geom_label_repel else ggrepel::geom_text_repel
 
     if (annotate_lines) {
@@ -454,9 +454,9 @@ plot_roc_auc = function(
     )
     p
 }
+
+
                                                      
-                                                     
-library(ggnetwork)
 
 frequency_line = list(
     # greater equal
@@ -482,6 +482,9 @@ plot_contributions_network = function(
     cn, cn_contributions, q=0.05, conditions=c('Tuberculosis', 'Cryptococcal')
 ) {
 
+    library(ggnetwork)
+    library(network)
+    
     cn = rbind(
         select_edges(
             cn, 'frequency', q,
@@ -529,7 +532,7 @@ plot_contributions_network = function(
         + geom_edges(color="grey50", curvature=0.01)
         + geom_edgetext(
             aes(
-                label=round(edge_label, 2),
+                label=round(edge_label, 3),
                 fill=edge_label_group
             ),
             color='black',
@@ -541,6 +544,7 @@ plot_contributions_network = function(
                 color=condition,
                 label=gene
             ),
+            fill='grey99',
             fontface='bold',
             box.padding = unit(0.7, "lines"),
             direction='y',
