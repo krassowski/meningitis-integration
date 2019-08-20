@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from math import sqrt, log2, log
+from math import sqrt, log2
 from typing import Type
 
 import pandas as pd

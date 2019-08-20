@@ -78,7 +78,7 @@ class GeneralizedBlockPipeline(ABC, BaseEstimator):
 @dataclass(config=ValidationConfig)
 class MultiBlockPipeline(GeneralizedBlockPipeline):
     """Intended for N-block integration"""
-    block_pipelines: Dict[str, Pipeline]
+    block_pipelines: Dict[BlockId, Pipeline]
 
 
 @dataclass(config=ValidationConfig)

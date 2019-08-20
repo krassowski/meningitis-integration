@@ -41,7 +41,8 @@ class CrossValidation:
         only_coefficients: bool = False, stripped: bool = False,
         permute: bool = False, progress_bar: bool = True, verbose: bool = True,
         coefficients: Dict[str, str] = {'x': 'coef_'}, early_normalization=False,
-        multi_scale=True, test_size_min=0.3, test_size_max=0.3, min_class_members=2
+        multi_scale=True, test_size_min=0.3, test_size_max=0.3, min_class_members=2,
+        min_classes_number=2
     ) -> Result:
 
         assert test_size_max < 1 and test_size_min > 0
@@ -57,6 +58,8 @@ class CrossValidation:
             binary_true_responses=[]
         )
         patients_classes = self.train_dataset.binary_response
+        # TODO: do I reaelly need to do that?
+        #  Maybe I could simply use self.train_dataset.data
         train_data = {
             block: getattr(self.train_dataset, block)
             for block in pipeline.block_pipelines.keys()
@@ -71,7 +74,7 @@ class CrossValidation:
         if early_normalization:
             abundance_transformed = pipeline.transformed_blocks
         else:
-            abundance_transformed = clone(pipeline).fit_transform_blocks(*train_data).transformed_blocks
+            abundance_transformed = clone(pipeline).fit_transform_blocks(*train_data.values()).transformed_blocks
 
         coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=abundance_transformed)
 
@@ -112,10 +115,14 @@ class CrossValidation:
 
                 # we have so few patients that we need to check if split
                 # has at least one in each class...
+                train_values = train_binary.value_counts(sort=False)
+                test_values = test_binary.value_counts(sort=False)
                 if (
-                    train_binary.value_counts(sort=False).min() >= min_class_members
+                    train_values.min() >= min_class_members
+                    and len(train_values) == min_classes_number
                     and
-                    test_binary.value_counts(sort=False).min() >= min_class_members
+                    test_values.min() >= min_class_members
+                    and len(test_values) == min_classes_number
                 ):
                     ok = True
                 elif verbose:
@@ -273,7 +280,7 @@ def repeated_cross_validation(
     test_dataset = MultiBlockDataSet(data=test_data if test_data is not None else [], case_class=case_class, response=response)
 
     if early_normalization:
-        pipeline.fit_transform_blocks(train_dataset.x, train_dataset.y)
+        pipeline.fit_transform_blocks(*train_dataset.data)
 
     cross_validation = CrossValidation(train_dataset=train_dataset)
 
@@ -331,7 +338,7 @@ def null_distributions_over_cv(pipeline, omic, response, block, permutations=100
     """Null distributions for an alternative hypothesis that the:
     a) mean coefficient value over cross validations is not random
     b) mean contribution value over cross validations is not random
-    
+
     Arguments:
         pipeline: the extended pipeline
         omic: passed to cross_validated_lasso
@@ -390,7 +397,7 @@ def performance_comparison(
     models = {}
     p_values = {}
     powers = []
-    
+
     for name, (norm_rna, norm_protein) in tqdm(datasets.items()):
         if datasets_subset and name not in datasets_subset:
             continue
@@ -403,7 +410,7 @@ def performance_comparison(
         a = getattr(results, to_compare)
 
         auc = a.roc_auc.assign(group=name)
-        
+
         for other_name, other in models.items():
 
             b = getattr(results, to_compare)
@@ -416,7 +423,7 @@ def performance_comparison(
                 and all(a.test_data.observations == b.test_data.observations)
                 and all(a.test_data.binary_response == b.test_data.binary_response)
             )
-            
+
             p, power_report = compare_roc_curves(
                 a_response, a_prediction,
                 b_response, b_prediction,
@@ -431,7 +438,7 @@ def performance_comparison(
                 print('Skipped power computation for non-paired ROC curves')
 
             p_values[(name, other_name)] = p
-        
+
         comparison_auc.append(auc)
         models[name] = results
 
