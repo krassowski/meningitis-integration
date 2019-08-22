@@ -27,9 +27,7 @@ I was aiming to chose techniques which are either established as standard in ana
 
 ### Single omic
 - [x] Differential expression (DE) (1 day)
-  - [x] for RNA-seq data ([notebooks](analyses/rnaseq_vs_clinical))
-  
-      initial DESeq2 performed by Dr Rachel, I re-analysed it with limma-voom toolset and different normalization proceduers
+  - [x] for RNA-seq data ([notebooks](analyses/rnaseq_vs_clinical))*
   - [x] for protein data ([notebook](analyses/protein_vs_clinical/Differential_levels.ipynb))
 - [ ] Survival analysis:
   - [ ] [clinical variables](analyses/Clinical_survival.ipynb),
@@ -40,15 +38,11 @@ I was aiming to chose techniques which are either established as standard in ana
   - [ ] [protein data](analyses/protein_vs_clinical/README.md)
   - [ ] RNA-seq
 
-I do not have a strong intuition on use of multiple regressions in this setting:
- - while the simpler approach would be to apply the model to all the variables and correct for multiple testing (MT),
- - I could also start with the specialised DE tools which would first highlight
- (i.e. test for significance and correct for MT of the DEGs with more specialized approaches)
- the genes/proteins which are differentially expressed between groups.
+\*) initial DESeq2 performed by Dr Rachel, I re-analysed it with limma-voom toolset and different normalization proceduers
 
 ### Multiple omics
-- [ ] Joint NMF clustering: a simple approach for unsupervised clustering (1 day)
-- [ ] Joint pathways analysis (late integration): using combined GSEA results (ActivePathways + Cytoscape) (2 days)
+- [ ] Joint NMF clustering: a simple approach for unsupervised clustering
+- [ ] Joint pathways analysis (late integration): using combined GSEA results (ActivePathways + Cytoscape)
 - [x] Correlations analysis ([notebook](analyses/integration/Correlations.ipynb))
 
 ## The actual study
@@ -109,4 +103,3 @@ proteins & transcripts linked to the disease diagnosis.
 integrate data from more than two blocks. Results from this work will form the basis of future large‐scale clinical studies to further advance the diagnosis
 of infectious meningitides and understanding its pathogenesis. The ultimate aim is to derive signatures that can be validated in other trials and applicable
 for future clinical use.
-
