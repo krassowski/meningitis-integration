@@ -3,17 +3,17 @@
 ## Data exploration:
 
 ### Molecular dataset
-- [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](data_exploration/Molecular_data_extraction.ipynb))
+- [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](exploration/Molecular_data_extraction.ipynb))
 - [ ] Quality control & transformations quantile-quantile plots
-  - [x] Protein data ([notebook](data_exploration/Protein_data_QC_and_transforms.ipynb))
+  - [x] Protein data ([notebook](exploration/Protein_data_QC_and_transforms.ipynb))
   - [ ] RNAseq data
 - [ ] Unsupervised exploration (PCA, hierarchical clustering) and correlations
-  - [x] Protein data ([notebook](data_exploration/Protein_data_unsupervised_analysis.ipynb))
-    - [x] [notes on PCA with prcomp and factoextra](data_exploration/Notes_on_PCA_with_prcomp_and_factoextra.ipynb) after the PCA discussion meeting
-  - [ ] RNAseq data ([notebook](data_exploration/RNAseq_data_unsupervised_analysis.ipynb))
+  - [x] Protein data ([notebook](exploration/Protein_data_unsupervised_analysis.ipynb))
+    - [x] [notes on PCA with prcomp and factoextra](exploration/Notes_on_PCA_with_prcomp_and_factoextra.ipynb) after the PCA discussion meeting
+  - [ ] RNAseq data ([notebook](exploration/RNAseq_data_unsupervised_analysis.ipynb))
 
 ### Clinical dataset
-- [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](data_exploration/Clinical_data_first_look.ipynb))
+- [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](exploration/Clinical_data_first_look.ipynb))
 - [ ] Derived variables (e.g. age, survival) and correlations (e.g. CD4) [notebook](analyses/Clinical_data.ipynb)
   - [x] derived variables
   - [x] which clinical variables can be used as covariates, which should be used (or, can be considered as) outcomes
