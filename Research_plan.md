@@ -53,7 +53,7 @@ I was aiming to chose techniques which are either established as standard in ana
 - [x] Reading up on scaling, de-noising, transformations and normalization
   - [x] Application to the analyzed omics data
 
-### Comparison of patient groups (by condition) ([notebooks](https://github.com/krassowski/meningitis-integration/blob/master/analyses/integration/PLS_and_PLS-DA.ipynb))
+### Comparison of patient groups (by condition) ([notebook](https://github.com/krassowski/meningitis-integration/blob/master/analyses/integration/PLS_and_PLS-DA.ipynb))
 - [x] single-omic (O)PLS-DA discrimination analysis (X = [protein | RNA], Y=patient group)
 - [x] multi-omics (O)PLS-DA discrimination analysis (X = [protein, RNA], Y=patient group)
 
