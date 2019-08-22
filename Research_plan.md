@@ -4,13 +4,13 @@
 
 ### Molecular dataset
 - [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](exploration/Molecular_data_extraction.ipynb))
-- [ ] Quality control & transformations quantile-quantile plots
+- [x] Quality control & transformations quantile-quantile plots
   - [x] Protein data ([notebook](exploration/Protein_data_QC_and_transforms.ipynb))
-  - [ ] RNAseq data
-- [ ] Unsupervised exploration (PCA, hierarchical clustering) and correlations
-  - [x] Protein data ([notebook](exploration/Protein_data_unsupervised_analysis.ipynb))
+  - [x] RNAseq data
+- [x] Unsupervised exploration (PCA, hierarchical clustering) and correlations
+  - [x] Protein data ([notebook](exploration/protein/Unsupervised_analysis.ipynb))
     - [x] [notes on PCA with prcomp and factoextra](exploration/Notes_on_PCA_with_prcomp_and_factoextra.ipynb) after the PCA discussion meeting
-  - [ ] RNAseq data ([notebook](exploration/RNAseq_data_unsupervised_analysis.ipynb))
+  - [x] RNAseq data ([notebook](exploration/rna/Unsupervised_analysis.ipynb))
 
 ### Clinical dataset
 - [x] Basic exploration: extraction, reformatting, sanity checks ([notebook](exploration/Clinical_data_first_look.ipynb))
@@ -30,7 +30,7 @@ I was aiming to chose techniques which are either established as standard in ana
   - [x] for RNA-seq data ([notebooks](analyses/rnaseq_vs_clinical))*
   - [x] for protein data ([notebook](analyses/protein_vs_clinical/Differential_levels.ipynb))
 - [ ] Survival analysis:
-  - [ ] [clinical variables](analyses/Clinical_survival.ipynb),
+  - [x] [clinical variables](analyses/Clinical_survival.ipynb),
   - [ ] [protein levels](analyses/protein_vs_clinical/Survival.ipynb)
 - [x] Gene set enrichment analysis (GSEA) 
 - [ ] Multiple regressions/ANOVA using top DEGs
@@ -66,8 +66,8 @@ Due to missing data, we may be a need to perform a few analyses:
      - patients with history of TB, additional variables: PrevTBForm, PrevTBTreat, OnTBTreat,
      (potentially also: DateTBTreat and DateTBTreatStop, though these are not useful on their own as are mutually exclusive; however when combined with other dates it might of some use)
 
-- [ ] O-PLS: single-omic regression (X=[protein | RNA], Y=clinical outcomes)
-- [ ] O-PLS: multi-omics regression (X=[protein, RNA], Y=clinical outcomes)
+- [ ] <s>O-PLS: single-omic regression (X=[protein | RNA], Y=clinical outcomes)</s>
+- [ ] <s>O-PLS: multi-omics regression (X=[protein, RNA], Y=clinical outcomes)</s>
 
 ### Multi-omics exploration?
 - [x] O2-PLS (X=protein, Y=RNA), O2 because the relation in either way is equally interesting.
