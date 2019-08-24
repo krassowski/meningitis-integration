@@ -25,9 +25,9 @@ max_text_width = function(names) {
 simple_clinical_annotation = function(annotations, limit_to=NULL) {
     if (!is.null(limit_to))
         annotations = annotations[limit_to,]
-    
+
     include_tb_status = nrow(unique(annotations['Tuberculosis status'])) > 1
-    
+
     if(include_tb_status) {
         clinical_annotation = ComplexHeatmap::HeatmapAnnotation(
             'HIV status'=annotations[,'HIV status'],
@@ -56,7 +56,7 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
             )
         )
     }
-    
+
     legends = list()
     if(include_tb_status) {
         status_legend = ComplexHeatmap::Legend(
@@ -72,23 +72,23 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
         )
         legends = c(legends, status_legend)
     }
-    
+
     list(annotation=clinical_annotation, legends=legends)
 }
 
 
 # annotations for use in ComplexHeatmap
 annotate_pvclust = function(x, n, mapper=convert_signif_codes, col='red', size=20, ...) {
-    
+
     n = nobs(as.dendrogram(x$hclust))
     # Based on text.pvclust
     # Licence: GPL (≥ 2)
     # Author: Ryota Suzuki and Hidetoshi Shimodaira
     axes <- pvclust:::hc2axes(x$hclust)
-    usr  <- par()$usr; wid <- usr[4] - usr[3]
+
     mapped = mapper(1 - x$edges[,"au"])
     au <- as.character(mapped)
-    
+
     a <- grid::grid.text(
         x=(axes[,1]-0.5)/n,
         y=axes[,2]/max(axes[,2]) + 0.075,
@@ -98,20 +98,36 @@ annotate_pvclust = function(x, n, mapper=convert_signif_codes, col='red', size=2
     mapped
 }
 
+
 pheatmap_palette = function(mat) {
-    
+
     max_abs = max(abs(mat))
-    
+
     circlize::colorRamp2(
         # having symmetric 
         seq(-max_abs, max_abs, length=100),
-        # TODO this is from  - add formal attribution?
+        # TODO this is from pheatmap - add formal attribution?
         colorRampPalette(rev(c("#D73027", "#FC8D59", "#FEE090", "#FFFFBF", "#E0F3F8", "#91BFDB", "#4575B4")))(100)
     )
 }
 
 
-pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
+decide_clustering = function(clustering) {
+    if(is.null(clustering))
+        cluster = FALSE
+    else if(clustering == 'default')
+        cluster = function(x) {hclust(dist(x))}
+    else
+        cluster = clustering$hclust
+    cluster
+}
+
+
+pvclust_heatmap = function(
+    counts_collapsed, samples_clustering, title,
+    rescale=TRUE, show_ids=TRUE,
+    fill_title='value', rows_clustering='default', ...
+) {
 
     patients_with_rnaseq = colnames(counts_collapsed)
 
@@ -120,24 +136,33 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
         counts_patient_annotations, limit_to=patients_with_rnaseq
     )
 
-    # first scale columns then rows
-    mat = t(scale(t(scale(counts_collapsed))))
+    if(rescale) {
+        # first scale columns then rows
+        mat = t(scale(t(scale(counts_collapsed))))
+    } else {
+        mat = counts_collapsed
+    }
 
     name = 'RNA-seq heatmap'
-    
-    if(!is.null(samples_clustering))
-        cluster_columns = samples_clustering$hclust
-    else
-        cluster_columns = FALSE
-    
+
+    cluster_rows = decide_clustering(rows_clustering)
+    cluster_columns = decide_clustering(samples_clustering)
+
+    if(!show_ids) {
+        colnames(mat) = NULL
+        rownames(mat) = NULL
+    }
+
     ht_list = ComplexHeatmap::Heatmap(
         mat,
         name=name,
         column_title = title,
         column_title_gp = grid::gpar(fontsize = 20, fontface = "bold"),
         cluster_columns=cluster_columns,
+        cluster_rows=cluster_rows,
         clustering_distance_rows='pearson',
-        column_dend_reorder = FALSE,
+        column_dend_reorder = is.null(cluster_columns),
+        row_dend_reorder = is.null(cluster_rows),
         top_annotation=clinical_annotations$annotation,
         column_dend_height = unit(3, "cm"), 
         col=pheatmap_palette(mat),
@@ -145,7 +170,7 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
             rownames(mat)
         ),
         heatmap_legend_param=list(
-            title = "Normalized RNA-seq z-score",
+            title = fill_title,
             title_position = "topleft",
             direction = "horizontal"
             # maybe TODO, limit at=min, max
@@ -174,7 +199,7 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
         annotation_legend_side = "top",
         annotation_legend_list=append(clinical_annotations$legends, p_legend),
     )
-    
+
     if(!is.null(samples_clustering))
         ComplexHeatmap::decorate_dend(name, {
             # see https://support.bioconductor.org/p/95294/#95318
@@ -189,12 +214,21 @@ pvclust_heatmap = function(counts_collapsed, samples_clustering, title, ...) {
             h_heatmap = as.hclust(tree)
 
             if (h_samples$order != h_heatmap$order | h_samples$height != h_heatmap$height) {
-                dendextend::tanglegram(dendextend::untangle(dendextend::dendlist(as.dendrogram(samples_clustering$hclust), tree), method = "step1side"))
+                dendextend::tanglegram(
+                    dendextend::untangle(
+                        dendextend::dendlist(
+                            as.dendrogram(samples_clustering$hclust),
+                            tree
+                        ),
+                        method = "step1side")
+                )
                 stop('Internal errror: passed and processed dendrograms do not match')
             }
 
             # maybe TODO: add rects for clusters
         }, envir = as.environment(1L))
+
+    #ht_lista
 }
 
 

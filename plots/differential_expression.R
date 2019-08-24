@@ -23,9 +23,8 @@ differential_expression_heatmap = function(genes_subset, counts, skip_cols=outli
     if(nrow(genes_subset) == 0)
         return(NULL)
 
-    annotation_row = NA
     padj = NA
-    
+
     # DESeq2
     if ('padj' %in% colnames(genes_subset)) {
         padj = genes_subset$padj
@@ -36,26 +35,26 @@ differential_expression_heatmap = function(genes_subset, counts, skip_cols=outli
         padj = genes_subset$adj.P.Val
         genes_subset = rownames(genes_subset)
     }
-    
+
     counts = log2(extract_counts(counts) + 0.25)
-    
+
     #if (class(counts) == 'DESeqDataSet')
     #    counts = log2(as.data.frame(DESeq2::counts(counts, normalized=TRUE)) + 0.25)
-    
+
     #if (class(counts) == 'DGEList')
     #    counts = edgeR::cpm(counts, log=TRUE, prior.count=0.25)
 
     counts = clean_and_subset_counts(counts, genes_subset, skip_cols=skip_cols)
-    
+
     if(!is.null(id_to_gene_name))
         rownames(counts) <- id_to_gene_name[rownames(counts), 'gene_name']
-    
+
     if (!is.null(padj)) {
         rownames(counts) = paste(formatC(padj, format="e", digits=1), rownames(counts), sep='\t')
     }
-    
+
     set.seed(0)
-    
+
     pheatmap::pheatmap(
         counts,
         show_colnames=T,
@@ -72,6 +71,7 @@ differential_expression_heatmap = function(genes_subset, counts, skip_cols=outli
     )
 }
 
+
 clean_and_subset_counts = function(counts, subset, skip_cols=NA) {
     colnames(counts) <- remove_leading_X(colnames(counts))
     if(!is.null(skip_cols))
@@ -79,14 +79,17 @@ clean_and_subset_counts = function(counts, subset, skip_cols=NA) {
     counts[subset,]
 }
 
-gene_set_heatmap = function(pathways_subset, counts, collection, id_type, skip_cols=outliers, id_to_gene_name=NA, trim=35, ...) {
+
+gene_set_heatmap = function(
+    pathways_subset, counts, collection, id_type,
+    skip_cols=outliers, id_to_gene_name=NA, trim=35, ...
+) {
 
     if(nrow(pathways_subset) == 0)
         return(NULL)
-    
-    annotation_row = NA
+
     padj = NA
-    
+
     # camera
     if ('FDR' %in% colnames(pathways_subset)) {
         padj = pathways_subset$FDR
@@ -94,7 +97,7 @@ gene_set_heatmap = function(pathways_subset, counts, collection, id_type, skip_c
     }
 
     counts = extract_counts(counts)
-    
+
     counts = counts_to_pathways_space(counts, collection, id_type=id_type)
     counts = log2(counts + 0.25)
 
@@ -103,7 +106,7 @@ gene_set_heatmap = function(pathways_subset, counts, collection, id_type, skip_c
     if (!is.null(padj)) {
         rownames(counts) = paste(formatC(padj, format="e", digits=1), rownames(counts), sep='\t')
     }
-    
+
     rownames(counts) = strtrim(rownames(counts), trim)
     set.seed(0)
 
@@ -134,13 +137,13 @@ advanced_differential_expression_heatmap = function(
     main='Differential expression', patients_clustering=NULL,
     ...
 ) {
-    
+
     if(nrow(genes_subset) == 0)
         return(NULL)
-    
+
     annotation_row = NA
     padj = NA
-    
+
     # DESeq2
     if ('padj' %in% colnames(genes_subset)) {
         padj = genes_subset$padj
@@ -155,14 +158,13 @@ advanced_differential_expression_heatmap = function(
         average_expression = genes_subset$AveExpr
         genes_subset = rownames(genes_subset)
     }
-    
-    
+
     counts = log2(extract_counts(counts) + 0.25)
     counts = clean_and_subset_counts(counts, genes_subset, skip_cols=skip_cols)
-    
+
     if(!is.null(id_to_gene_name))
         rownames(counts) <- id_to_gene_name[rownames(counts), 'gene_name']
-    
+
     if(is.null(patients_clustering)) {
         if (nrow(counts) > 2)
             patients_clustering <- pvclust::pvclust(
@@ -180,6 +182,7 @@ advanced_differential_expression_heatmap = function(
 
     pvclust_heatmap(
         counts, patients_clustering, title=main,
+        fill_title="Normalized RNA-seq z-score",
         right_annotation=ComplexHeatmap::rowAnnotation(
             'mean' = ComplexHeatmap::anno_simple(
                 average_expression, col=circlize::colorRamp2(

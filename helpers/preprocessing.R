@@ -75,7 +75,7 @@ choose_regions_above_the_mean = function(
         candidate_breakpoint = which(distances == chosen_minimum)
         nth = 1
         while(any(trend[1:(candidate_breakpoint-1)] < trend[candidate_breakpoint])) {
-            
+
             nth = nth + 1
             chosen_minimum = minima[nth]
             candidate_breakpoint = which(distances == chosen_minimum)
@@ -85,7 +85,7 @@ choose_regions_above_the_mean = function(
                 'Skipped', nth, 'non-monotonic breakpoint candidates'
             ))
         }
-            
+
     }
     breakpoint = which(distances == chosen_minimum)
 
