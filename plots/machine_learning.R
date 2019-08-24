@@ -18,7 +18,7 @@ plot_coefficients = function(
     format='e', digits=0,
     select='p_value', label='p_value', fill='selected_in',
     select_descending=TRUE, select_abs=FALSE,
-    label_name=NULL, fill_name=NULL
+    label_name=NULL, fill_name=NULL, type='contribution'
 ) {
     if(!is.null(limit_to_n_most_extreme)) {
         coeffs = select_coeffs(
@@ -32,7 +32,7 @@ plot_coefficients = function(
         + geom_bar(aes_string(fill=fill), stat='identity')
         + geom_errorbar(aes(ymin=mean-ci, ymax=mean+ci))
     )
-    
+
     if (label != 'fdr') {
         p = (p
             + geom_text(aes(
@@ -63,12 +63,11 @@ plot_coefficients = function(
             )
         )
     }
-    
+
     (p
         + nice_theme
         + theme(axis.text.x=element_text(angle=90, hjust=1))
-       
-        + ylab('Mean contribution (coefficient)')
+        + ylab(paste('Mean', type))
         #+ ggforce::facet_zoom(x=value < -0.1)
     )
 }

@@ -7,6 +7,7 @@ import pandas as pd
 from numpy import sign
 from pandas import DataFrame, Series
 from rpy2.robjects import r
+from rpy2 import robjects
 from tqdm.auto import tqdm
 
 from helpers.p_values import gpd_p_value
@@ -62,7 +63,7 @@ class Coefficients:
 
         if null_distributions is not None:
             null_distribution = self.extract_null(null_distributions)
-            self.add_significance(null_distribution, **p_value_kwargs)
+            self.add_significance(null_distribution, **p_value_kwargs or {})
         else:
             assert not p_value_kwargs
 
@@ -81,7 +82,7 @@ class Coefficients:
             ordered=True
         )
 
-    def add_permutation_significance(self, null_distribution: DataFrame = None, **kwargs):
+    def add_permutation_significance(self, null_distribution: DataFrame, **kwargs):
 
         coeffs = self.data
         # reorder
@@ -108,16 +109,16 @@ class Coefficients:
         coeffs[p_values.columns] = p_values
         coeffs['fdr'] = p_adjust(coeffs['p_value'], 'BH')
 
-    def add_hdi_significance(self, x, y, family='binomial', cores=4):
+    def add_hdi_significance(self, x, y, family='binomial', cores=4, suppress_group_testing=False, **kwargs):
         r('library("hdi")')
         lasso_proj = partial(r_function_numpy, 'lasso.proj')
         as_matrix = partial(r_function, 'as.matrix')
-        from rpy2 import robjects
         robjects.globalenv['y'] = y.tolist()
         r('y = as.numeric(y)')
         result = lasso_proj(
             x=as_matrix(x.values), y=r['y'],
-            family=family, parallel=True, ncores=cores
+            family=family, parallel=True, ncores=cores,
+            **{'suppress.grouptesting': suppress_group_testing, **kwargs}
         )
         self.data[f'{family}_p'] = Series(result.rx2('pval'), index=x.columns)
         self.data[f'{family}_FDR'] = p_adjust(self.data[f'{family}_p'], 'BH')
@@ -133,12 +134,25 @@ class Coefficients:
     def add_weighted_auc(self, cv_auc: DataFrame):
         """Pass result.sub_sampling_test_results.cv_auc here"""
         coeffs = self.data
-        contribution = self.coeffs_across_cv.abs() / self.coeffs_across_cv.abs().sum()
+        coeffs_across_cv = self.coeffs_across_cv
+        null_models = self.coeffs_across_cv.sum() == 0
+        null_genes = self.coeffs_across_cv.sum(axis=1) == 0
+        if null_models.any():
+            print(null_models.sum(), 'null models detected')
+            coeffs_across_cv = self.coeffs_across_cv.fillna(0)
+        if null_genes.any():
+            print(null_genes.sum(), 'genes not selected in any model detected')
+        contribution = coeffs_across_cv.abs() / coeffs_across_cv.abs().sum()
+        if null_models.any():
+            contribution = contribution.fillna(0)
         # otherwise this is useless
         assert len(set(cv_auc)) > 1
-        coeffs['weighted_auc'] = (
+        weighted_auc = (
             contribution.values * pd.concat([Series(cv_auc) for _ in range(len(coeffs))], axis=1).T.values
-        ).sum(axis=1) / (self.coeffs_across_cv != 0).sum(axis=1)
+        ).sum(axis=1) / (coeffs_across_cv != 0).sum(axis=1)
+        if null_genes.any():
+            weighted_auc = weighted_auc.fillna(0)
+        coeffs['weighted_auc'] = weighted_auc
 
     def select(self, non_zero_ratio_required=None):
         coeffs = self.data

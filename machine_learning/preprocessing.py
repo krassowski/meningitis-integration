@@ -30,8 +30,9 @@ class Filter(TransformerMixin):
         if self.verbose:
             name = self.__class__.__name__
             print(
-                f'{name}: filtering out {sum(to_filter_out_columns)}/'
-                f'{len(self.to_filter_out)} variables'
+                f'{name}: filtering out {sum(to_filter_out_columns)}'
+                f' out of {len(self.to_filter_out)} variables requested to be'
+                f' filtered out (total variables={len(x.columns)})'
             )
         if self.verbose > 1 and sum(to_filter_out_columns):
             print(list(x.columns[to_filter_out_columns]))
