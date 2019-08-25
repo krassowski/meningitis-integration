@@ -17,15 +17,16 @@ tuberculosis_status = {
 }
 
 
-def generate_patient_annotations(clinical, hiv=True, fillna='?'):
+def generate_patient_annotations(clinical, hiv=True, fillna='?', **kwargs):
+    if hiv:
+        kwargs['HIV status'] = 'HIVResult'
     return DataFrame({
         **{
             'Meningitis': clinical.condition.replace(conditions_names),
             'Tuberculosis status': clinical.condition.map(tuberculosis_status).fillna('-')
         },
-        **(
-            {'HIV status': clinical.HIVResult}
-            if hiv else
-            {}
-        )
+        **{
+            name: getattr(clinical, column)
+            for name, column in kwargs.items()
+        }
     }).set_index(clinical.index).fillna(fillna)

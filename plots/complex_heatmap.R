@@ -26,10 +26,17 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
     if (!is.null(limit_to))
         annotations = annotations[limit_to,]
 
+    handled_manually = c(
+        'Tuberculosis status',
+        'HIV status',
+        'Meningitis'
+    )
+    cols = colnames(annotations)
+    other_cols = cols[!cols %in% handled_manually]
     include_tb_status = nrow(unique(annotations['Tuberculosis status'])) > 1
 
     if(include_tb_status) {
-        clinical_annotation = ComplexHeatmap::HeatmapAnnotation(
+        args = list(
             'HIV status'=annotations[,'HIV status'],
             'Tuberculosis status'=ComplexHeatmap::anno_simple(
                 annotations[,'Tuberculosis status'],
@@ -46,7 +53,7 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
             )
         )
     } else {
-        clinical_annotation = ComplexHeatmap::HeatmapAnnotation(
+        args = list(
             'HIV status'=annotations[,'HIV status'],
             'Meningitis'=annotations[,'Meningitis'],
             col=patient_colors,
@@ -56,6 +63,13 @@ simple_clinical_annotation = function(annotations, limit_to=NULL) {
             )
         )
     }
+    for (other in other_cols) {
+        args[other] = annotations[other]
+    }
+    clinical_annotation = do.call(
+        ComplexHeatmap::HeatmapAnnotation,
+        args
+    )
 
     legends = list()
     if(include_tb_status) {
@@ -113,7 +127,9 @@ pheatmap_palette = function(mat) {
 
 
 decide_clustering = function(clustering) {
-    if(is.null(clustering))
+    if(is.function(clustering))
+        cluster = clustering
+    else if(is.null(clustering))
         cluster = FALSE
     else if(clustering == 'default')
         cluster = function(x) {hclust(dist(x))}
@@ -129,11 +145,11 @@ pvclust_heatmap = function(
     fill_title='value', rows_clustering='default', ...
 ) {
 
-    patients_with_rnaseq = colnames(counts_collapsed)
+    patients_with_counts = colnames(counts_collapsed)
 
     clinical_annotations = simple_clinical_annotation(
         # TODO this should be passed as an argument, not taken from the env
-        counts_patient_annotations, limit_to=patients_with_rnaseq
+        counts_patient_annotations, limit_to=patients_with_counts
     )
 
     if(rescale) {
@@ -200,7 +216,7 @@ pvclust_heatmap = function(
         annotation_legend_list=append(clinical_annotations$legends, p_legend),
     )
 
-    if(!is.null(samples_clustering))
+    if(!is.null(samples_clustering) && 'hclust' %in% attributes(samples_clustering)$names)
         ComplexHeatmap::decorate_dend(name, {
             # see https://support.bioconductor.org/p/95294/#95318
             tree = ComplexHeatmap::column_dend(ht_lista)
