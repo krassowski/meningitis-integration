@@ -50,3 +50,4 @@ install.packages("cvAUC", quiet=T)
 install.packages('hdi', quiet=T)
 
 install.packages("ggnetwork", quiet=T)
+install.packages('SNFtool', quiet=T)
