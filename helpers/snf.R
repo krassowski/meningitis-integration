@@ -63,7 +63,7 @@ compare_silhouette = function(
     clustering_function=spectralClustering, max_n=5
 ) {
     df = list()
-    for (C in 2:4) {
+    for (C in 2:max_n) {
         group_CSF = clustering_function(consensus, C)
         scores = c()
         for (name in names(distance_matrices)) {
