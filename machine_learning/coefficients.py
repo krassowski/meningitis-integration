@@ -28,6 +28,25 @@ class Coefficients:
     def extract_null(self, null_distributions):
         return null_distributions['contributions']
 
+    def add_quantiles(self):
+        coeffs = self.data
+        coeffs_across_cv = self.coeffs_across_cv
+        coeffs['quantile_0.25'] = coeffs_across_cv.quantile(q=0.25, axis=1)
+        coeffs['quantile_0.50'] = coeffs_across_cv.quantile(q=0.50, axis=1)
+        coeffs['quantile_0.75'] = coeffs_across_cv.quantile(q=0.75, axis=1)
+
+    def add_above_abs_quantile(self, q=0.5):
+        coeffs = self.data
+        coeffs_across_cv = self.coeffs_across_cv
+
+        abs_coeffs_cv = coeffs_across_cv.abs()
+        coeffs[f'above_abs_iteration_quantile_{q}'] = (
+            abs_coeffs_cv.ge(
+                abs_coeffs_cv.quantile(q=q, axis=0),
+                axis='columns'
+            )
+        ).mean(axis=1)
+
     def __init__(
         self, coeffs_across_cv: DataFrame, abundance: DataFrame = None,
         null_distributions: dict = None, p_value_kwargs: dict = None,
@@ -54,10 +73,6 @@ class Coefficients:
         coeffs['mean'] = coeffs_across_cv.mean(axis=1)
         coeffs['stdev'] = coeffs_across_cv.std(axis=1)
         coeffs['ci'] = 1.96 * coeffs_across_cv.std(axis=1) / sqrt(len(coeffs_across_cv))
-
-        coeffs['quantile_0.25'] = coeffs_across_cv.quantile(q=0.25, axis=1)
-        coeffs['quantile_0.50'] = coeffs_across_cv.quantile(q=0.50, axis=1)
-        coeffs['quantile_0.75'] = coeffs_across_cv.quantile(q=0.75, axis=1)
 
         self.data = coeffs
 

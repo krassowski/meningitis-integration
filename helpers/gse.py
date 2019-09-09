@@ -21,7 +21,9 @@ def calculate_overlap(gmt, matrix):
     print(f'{precentage:.2f}%')
 
 
-def collection_to_R(collection, trim_to, min=5, max=500):
+def collection_to_R(collection, trim_to, min=5, max=500, name=None):
+    if not name:
+        name = collection.name
     gene_ids = trim_to
     filtered = {
         gene_set.name: StrVector(list(gene_set.genes))
@@ -31,15 +33,14 @@ def collection_to_R(collection, trim_to, min=5, max=500):
             # limma::mroast seems to work fine (and be more aware of the limitted statistical support)
             .subset(gene_ids)
             .gene_sets
-            
             if gene_ids else collection.gene_sets
         )
         if max > len(gene_set.genes) > min
     }
     gene_sets_r = ListVector(filtered)
 
-    globalenv[collection.name] = gene_sets_r
-    
+    globalenv[name] = gene_sets_r
+
     return filtered
 
 
