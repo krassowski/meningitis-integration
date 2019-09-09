@@ -44,6 +44,10 @@ class MultiBlockDataSet:
     def y(self):
         return self.data[1]
 
+    @property
+    def z(self):
+        return self.data[2]
+
     def apply(self, func):
         for i in range(len(self.data)):
             self.data[i] = func(self.data[i])
