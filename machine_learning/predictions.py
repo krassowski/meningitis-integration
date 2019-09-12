@@ -7,7 +7,7 @@ import pandas as pd
 from pandas import Series
 
 from .data_classes import MultiBlockDataSet, dataclass
-from .multi_block_pipeline import TwoBlockPipeline
+from .multi_block_pipeline import MultiBlockPipeline
 from .roc_auc import roc_auc_plot_data, compute_cv_statistics
 
 # TODO: something is amiss with pydantic here?
@@ -51,7 +51,7 @@ class Result:
         )
 
     @classmethod
-    def from_test_set(cls, pipeline: TwoBlockPipeline, test_set: MultiBlockDataSet, train_set=None):
+    def from_test_set(cls, pipeline: MultiBlockPipeline, test_set: MultiBlockDataSet, train_set=None):
         return cls(
             predicted_probabilities=[pipeline.predict(pipeline, test_set)],
             binary_true_responses=[test_set.binary_response],

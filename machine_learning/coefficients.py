@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import partial
 from math import sqrt, log2
-from typing import Type
+from typing import Type, Dict
 
 import pandas as pd
 from numpy import sign
@@ -247,17 +247,29 @@ class Contributions(Coefficients):
 
 class CoefficientsManager:
 
-    def __init__(self, coefficients, abundance_matrices):
-        self.abundance_matrices = abundance_matrices
+    def __init__(self, coefficients, abundance_matrices: Dict):
+        self.abundance_matrices = abundance_matrices.copy()
         self.matrix_to_attribute = coefficients
-        assert not (coefficients.keys() - {'x', 'y'})
+        assert not (coefficients.keys() - {'x', 'y', 'combined'})
         self.values = {matrix: [] for matrix in coefficients}
         self.concatenated = False
+        self.abundance_combined_added = False
 
     def add(self, split_matrices, pipeline):
         for matrix, attribute in self.matrix_to_attribute.items():
-            matrix_data = split_matrices[matrix]
-
+            # requested for coefficients of a single matrix
+            if matrix in split_matrices:
+                matrix_data = split_matrices[matrix]
+            # requested for coefficients of combined matrices
+            elif matrix == 'combined':
+                matrix_data = pipeline.combine.transform(split_matrices)['Combined']
+                if not self.abundance_combined_added:
+                    combined = pipeline.combine.transform(self.abundance_matrices)
+                    assert len(combined) <= 2   # maximum of one combined block + one outcome block allowed
+                    self.abundance_matrices['combined'] = combined['Combined']
+                    self.abundance_combined_added = True
+            else:
+                raise ValueError('Unknown matrix for coefficients extraction: ', matrix)
             self.values[matrix].append(
                 pipeline.get_coefficients(matrix_data.columns, coefficient=attribute)
             )

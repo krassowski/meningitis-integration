@@ -13,7 +13,7 @@ from .data_classes import AttributesStore
 from .data_classes import MultiBlockDataSet
 from .coefficients import CoefficientsManager
 from .coefficients import Coefficients, Contributions
-from .multi_block_pipeline import TwoBlockPipeline
+from .multi_block_pipeline import MultiBlockPipeline
 
 from .predictions import Result
 from .roc_auc import compare_roc_curves
@@ -27,7 +27,7 @@ class CrossValidation:
     Note: CV does not care about pre-processing, this is the responsibility of the pipeline.
     """
 
-    estimators: List[TwoBlockPipeline] = field(init=False)
+    estimators: List[MultiBlockPipeline] = field(init=False)
     train_dataset: MultiBlockDataSet
     coefficients: AttributesStore[Coefficients] = field(init=False)
     contributions: AttributesStore[Contributions] = field(init=False)
@@ -36,7 +36,7 @@ class CrossValidation:
         self.estimators = []
 
     def cross_validate(
-        self, pipeline: TwoBlockPipeline, n=100,
+        self, pipeline: MultiBlockPipeline, n=100,
         use_seed: bool = True, stratify: bool = True,
         only_coefficients: bool = False, stripped: bool = False,
         permute: bool = False, progress_bar: bool = True, verbose: bool = True,
@@ -74,7 +74,7 @@ class CrossValidation:
         if early_normalization:
             abundance_transformed = pipeline.transformed_blocks
         else:
-            abundance_transformed = clone(pipeline).fit_transform_blocks(*train_data.values()).transformed_blocks
+            abundance_transformed = clone(pipeline).fit_transform_blocks(train_data).transformed_blocks
 
         coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=abundance_transformed)
 
@@ -120,8 +120,7 @@ class CrossValidation:
                 if (
                     train_values.min() >= min_class_members
                     and len(train_values) == min_classes_number
-                    and
-                    test_values.min() >= min_class_members
+                    and test_values.min() >= min_class_members
                     and len(test_values) == min_classes_number
                 ):
                     ok = True
@@ -134,7 +133,7 @@ class CrossValidation:
                 train[block] = train_data[block].loc[train_patients]
                 test[block] = train_data[block].loc[test_patients]
 
-            split_pipeline: TwoBlockPipeline = clone(pipeline)
+            split_pipeline: MultiBlockPipeline = clone(pipeline)
 
             if early_normalization:
                 split_pipeline.transformed_blocks = {
@@ -142,10 +141,11 @@ class CrossValidation:
                     for name, block in pipeline.transformed_blocks.items()
                 }
                 for name, p in pipeline.block_pipelines.items():
-                    setattr(split_pipeline, name, p)
-                split_pipeline.combine.fit(*split_pipeline.transformed_blocks.values())
+                    split_pipeline.block_pipelines[name] = p
+
+                split_pipeline.fit_from_transformed(split_pipeline.transformed_blocks)
             else:
-                split_pipeline.fit(*train.values())
+                split_pipeline.fit(train)
 
             self.estimators.append(split_pipeline)
 
@@ -155,7 +155,7 @@ class CrossValidation:
                 continue
 
             cv_dataset = MultiBlockDataSet(
-                [*test.values()],
+                test,
                 case_class=self.train_dataset.case_class,
                 response=self.train_dataset.response
             )
@@ -211,7 +211,7 @@ class CrossValidationResult:
     # NOTE: the pipeline is re-trained on the full training set;
     # as such they should not be used to obtain predictions of the training set for the
     # performance assessment, as this is better served by the cross validated results.
-    pipeline: TwoBlockPipeline
+    pipeline: MultiBlockPipeline
 
     # this will produce over-optimistic prediction assessment
     # when compared to real world performance, due to moderate
@@ -262,14 +262,14 @@ class CrossValidationResult:
 
 
 def repeated_cross_validation(
-    pipeline: TwoBlockPipeline, train_data: List[DataFrame],
+    pipeline: MultiBlockPipeline, train_data: Dict[str, DataFrame],
     response, case_class='Tuberculosis',
     n=1000, use_seed=False, stratify=True,
     permute=False, progress_bar=True,
     only_coefficients=False, stripped=False,
     early_normalization=False,
     verbose=False,
-    test_data=None,
+    test_data: Dict[str, DataFrame] = None,
     coefficients={'x': 'coef_'},
     multi_scale=True, test_size_min=0.3, test_size_max=0.3,
     min_class_members=2
@@ -280,7 +280,7 @@ def repeated_cross_validation(
     test_dataset = MultiBlockDataSet(data=test_data if test_data is not None else [], case_class=case_class, response=response)
 
     if early_normalization:
-        pipeline.fit_transform_blocks(*train_dataset.data)
+        pipeline.fit_transform_blocks(train_dataset.data)
 
     cross_validation = CrossValidation(train_dataset=train_dataset)
 
@@ -298,11 +298,10 @@ def repeated_cross_validation(
     if verbose:
         print('Re-fitting on the entire dataset...')
 
-    # TODO: make it work with 1D
     if early_normalization:
-        pipeline.combine.fit(*pipeline.transformed_blocks.values())
+        pipeline.fit_from_transformed(pipeline.transformed_blocks)
     else:
-        pipeline.fit(train_dataset.x, train_dataset.y)
+        pipeline.fit(train_dataset.data)
 
     test_result = Result.from_test_set(
         pipeline=pipeline,
