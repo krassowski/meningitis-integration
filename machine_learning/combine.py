@@ -15,6 +15,8 @@ class BlocksCombiner(ABC, TransformerMixin):
 
 
 class BlocksConcatenation(BlocksCombiner):
+    """Similar to sklearn.compose.FeatureUnion"""
+
     def __init__(self, blocks: List[str], axis=1, verbose=False):
         self.blocks = blocks
         self.verbose = verbose

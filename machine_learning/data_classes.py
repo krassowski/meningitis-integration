@@ -1,6 +1,7 @@
-from typing import TypeVar, Generic, Union, Dict
+import random
+from typing import TypeVar, Generic, Union, Dict, Callable
 
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from pydantic import BaseConfig
 
 from pydantic.dataclasses import dataclass
@@ -25,6 +26,13 @@ class BlocksWrapper:
     Use it for block manipulation if needed and then just pass .blocks to the pipeline.
     """
     blocks: Dict[BlockId, Block]
+
+    @property
+    def aligned_index(self) -> Index:
+        self.verify_index_integrity(require_ordered=True)
+        blocks_iterator = iter(self.blocks.values())
+        first_block = next(blocks_iterator)
+        return first_block.index
 
     def consensus_index(self, operation: str):
         assert operation in {'intersection', 'union', 'difference'}
@@ -64,7 +72,7 @@ class BlocksWrapper:
         new.verify_index_integrity(require_ordered=True)
         return new
 
-    def verify_index_integrity(self, require_ordered=True):
+    def verify_index_integrity(self, require_ordered: bool):
         blocks_iterator = iter(self.blocks.values())
         first_block = next(blocks_iterator)
         for block in blocks_iterator:
@@ -109,7 +117,7 @@ class BlocksWrapper:
         return BlocksWrapper(new_blocks)
 
     def add_supervision_block(self, conditions_vector: Series, name: str) -> 'BlocksWrapper':
-        self.verify_index_integrity()
+        self.verify_index_integrity(require_ordered=True)
         first_block = next(iter(self.blocks.values()))
         index = first_block.index
 
@@ -124,6 +132,15 @@ class BlocksWrapper:
 
     def to_dataset(self, **kwargs) -> 'MultiBlockDataSet':
         return MultiBlockDataSet(self.blocks, **kwargs)
+
+
+RandomizeCallback = Callable[[Series], Series]
+randomization_methods = {
+    # random.sample samples without replacement
+    'permute': lambda x: random.sample(x, len(x)),
+    # random.sample samples with replacement
+    'bootstrap': lambda x: random.choices(x, k=len(x))
+}
 
 
 @dataclass
@@ -144,6 +161,18 @@ class MultiBlockDataSet:
         assert len(set(classes)) == 2
         return classes == self.case_class
 
+    def randomized(self, method: Union[str, RandomizeCallback]) -> 'MultiBlockDataSet':
+        """Randomize the data using provided method ('permute, 'bootstrap', or custom callback)."""
+
+        if isinstance(method, str):
+            method = randomization_methods[method]
+
+        return MultiBlockDataSet(
+            data=self.data,
+            case_class=self.case_class,
+            response=Series(data=method(self.response.data), index=self.response.index)
+        )
+
     @property
     def class_imbalance(self) -> float:
         return self.binary_response.mean()
@@ -163,7 +192,7 @@ class MultiBlockDataSet:
     def observations(self) -> Series:
         """For example, patients in DA problems"""
         first_block = next(iter(self.data.values()))
-        BlocksWrapper(blocks=self.data).verify_index_integrity()
+        BlocksWrapper(blocks=self.data).verify_index_integrity(require_ordered=True)
         return first_block.index
 
 

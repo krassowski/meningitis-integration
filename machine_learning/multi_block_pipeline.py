@@ -1,15 +1,16 @@
+from __future__ import annotations
 from warnings import warn
 
 from pydantic import BaseModel
-from typing import Callable, Union, Dict
+from typing import Union, Dict
 
 from pandas import Series
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, clone
 from sklearn.pipeline import Pipeline
 
-from machine_learning.adapter import BlocksAdapter, SklearnAdapter
-from machine_learning.combine import BlocksCombiner
-from .data_classes import MultiBlockDataSet, BlockId, Blocks, Block
+from .adapter import BlocksAdapter, SklearnAdapter
+from .combine import BlocksCombiner
+from .data_classes import BlockId, Blocks, Block, BlocksWrapper
 
 
 class ValidatedModel(BaseModel):
@@ -19,8 +20,9 @@ class ValidatedModel(BaseModel):
 
 def find_attribute(estimator, attribute='coef_', to_traverse=('best_estimator_', '_final_estimator'), self=True):
     """It is assumed that estimator has no more than one of the 'to_traverse' attributes"""
-    if self and hasattr(estimator, attribute):
-        return getattr(estimator, attribute)
+    if self:
+        if hasattr(estimator, attribute):
+            return getattr(estimator, attribute)
     for field in to_traverse:
         if hasattr(estimator, field):
             next_estimator = getattr(estimator, field)
@@ -42,7 +44,7 @@ class MultiBlockPipeline(BaseEstimator, ValidatedModel):
 
     block_pipelines: Dict[BlockId, Pipeline]
     model: Union[Pipeline, BaseEstimator]
-    predict: Callable[['MultiBlockPipeline', MultiBlockDataSet], Series]
+    predict: Union[PredictionFunction, PipelinePredictor]
     combine: BlocksCombiner = BlocksRelay()
     adapter: BlocksAdapter = BlocksRelay()
     verbose: bool = False
@@ -143,6 +145,42 @@ class MultiBlockPipeline(BaseEstimator, ValidatedModel):
         return Series(coef, index=index)
 
 
+class LeakyPipeline(MultiBlockPipeline):
+    """This is for educational purposes only, to demonstrate the leakage of information from test set to train set
+    if an early normalization is applied (i.e. normalization is performed before splitting the dataset; this class
+    is used to highlight that this is important not only for train-test split but also for CV splits).
+    """
+
+    parent_pipeline: Union[MultiBlockPipeline, None] = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def fit(self, blocks: Blocks):
+        if self.parent_pipeline is None:
+            self.parent_pipeline = clone(self)
+
+        blocks = BlocksWrapper(blocks=blocks)
+        blocks.verify_index_integrity(require_ordered=True)
+
+        train_index = blocks.aligned_index
+
+        self.transformed_blocks = {
+            name: block.loc[train_index]
+            for name, block in self.parent_pipeline.transformed_blocks.items()
+        }
+        # TODO: WHY?
+        for name, p in self.parent_pipeline.block_pipelines.items():
+            self.block_pipelines[name] = p
+
+        self.fit_from_transformed(self.transformed_blocks)
+
+
+# for annotations, avoids circular import
+from .predictions import PipelinePredictor, PredictionFunction
+MultiBlockPipeline.update_forward_refs()
+
+
 class TwoBlockPipeline(MultiBlockPipeline):
     """Intended for regression, classification, discriminant analysis etc."""
     __custom_params__ = {'x', 'y'}
@@ -176,33 +214,3 @@ class OneBlockPipeline(MultiBlockPipeline):
     def x(self) -> Pipeline:
         return self.block_pipelines['x']
 
-
-def predict_proba(pipeline: MultiBlockPipeline, dataset: MultiBlockDataSet):
-    """This is intended to work with standard sklearn API (usually for a single block)"""
-    blocks = pipeline.partial_transform(blocks=dataset.data)
-    if len(blocks) == 2:
-        data = blocks['X']
-        response = blocks['y']
-        if data.isnull().any().any():
-            print('Dropping nans: ', data.isnull().any(axis=1).sum())
-            not_dropped = data.index[~data.isnull().any(axis=1)]
-            data = data.dropna(axis=0)
-            response = response.loc[not_dropped]
-
-        full_blocks = pipeline.combine.transform(pipeline.transformed_blocks)
-        full_blocks = pipeline.adapter.transform(full_blocks)
-        fitted_to_block = full_blocks['X']
-        if len(fitted_to_block.columns) != len(data.columns) or (fitted_to_block.columns != data.columns).all():
-            # print('Taking only the variables as selected in the previously fitted model')
-            difference = fitted_to_block.columns.difference(data.columns)
-            assert not difference.any()  # this can happen if outliers are excluded from one block only
-            data = data.loc[:, fitted_to_block.columns].fillna(0)
-
-        p = pipeline.call('predict_proba', data)
-        return Series(p[:, 1], index=response)
-    else:
-        raise ValueError(
-            'predict_proba can only handle two blocks after combination'
-            '(with one being the outcome);'
-            f' {len(blocks)} provided'
-        )

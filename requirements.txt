@@ -13,7 +13,7 @@ matplotlib
 tzlocal
 inflection
 goatools
-sklearn
+scikit-learn==0.23.1
 enhanced_multiprocessing
 gsea_api
 scikit-gof

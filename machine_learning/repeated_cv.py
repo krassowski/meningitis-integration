@@ -1,22 +1,30 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
-from random import shuffle, uniform
 from types import SimpleNamespace
-from typing import List, Dict
+from typing import List, Dict, Union, Tuple
 
 from pandas import DataFrame, Series
 import pandas as pd
 from sklearn import clone
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import BaseCrossValidator, StratifiedShuffleSplit
+from sklearn.model_selection._search import BaseSearchCV
+from sklearn.model_selection._split import BaseShuffleSplit, ShuffleSplit
 from tqdm.auto import tqdm
 
-from .data_classes import AttributesStore
+from machine_learning.model_selection.split import (
+    IndependentMultiSizeShuffleSplits, ValidatingSplitter,
+    classification_split_validator,
+)
+from .data_classes import AttributesStore, BlocksWrapper, RandomizeCallback
 from .data_classes import MultiBlockDataSet
 from .coefficients import CoefficientsManager
 from .coefficients import Coefficients, Contributions
-from .multi_block_pipeline import MultiBlockPipeline
+from .multi_block_pipeline import MultiBlockPipeline, LeakyPipeline
 
 from .predictions import Result
 from .roc_auc import compare_roc_curves
+
+SklearnSplitter = Union[BaseCrossValidator, BaseShuffleSplit]
 
 
 @dataclass
@@ -27,138 +35,85 @@ class CrossValidation:
     Note: CV does not care about pre-processing, this is the responsibility of the pipeline.
     """
 
-    estimators: List[MultiBlockPipeline] = field(init=False)
+    splits: List[Dict[str, Union[MultiBlockPipeline, float]]] = field(init=False)
     train_dataset: MultiBlockDataSet
     coefficients: AttributesStore[Coefficients] = field(init=False)
     contributions: AttributesStore[Contributions] = field(init=False)
 
     def __post_init__(self):
-        self.estimators = []
+        self.splits = []
+
+    @staticmethod
+    def are_blocks_indexes_aligned(train_data):
+        return BlocksWrapper(blocks=train_data).verify_index_integrity(require_ordered=True)
 
     def cross_validate(
-        self, pipeline: MultiBlockPipeline, n=100,
-        use_seed: bool = True, stratify: bool = True,
+        self, pipeline: MultiBlockPipeline,
+        cv: Union[ValidatingSplitter, SklearnSplitter],
         only_coefficients: bool = False, stripped: bool = False,
-        permute: bool = False, progress_bar: bool = True, verbose: bool = True,
-        coefficients: Dict[str, str] = {'x': 'coef_'}, early_normalization=False,
-        multi_scale=True, test_size_min=0.3, test_size_max=0.3, min_class_members=2,
-        min_classes_number=2
+        verbose: bool = True, coefficients: Dict[str, str] = {'x': 'coef_'},
     ) -> Result:
 
-        assert test_size_max < 1 and test_size_min > 0
-        if multi_scale:
-            assert test_size_max != test_size_min
-        else:
-            assert test_size_max == test_size_min
+        if not isinstance(cv, ValidatingSplitter):
+            cv = ValidatingSplitter(cv)
+
+        train_dataset = self.train_dataset
 
         cv_results = Result(
-            train_data=self.train_dataset,
-            test_data=self.train_dataset,
+            train_data=train_dataset,
+            test_data=train_dataset,
             predicted_probabilities=[],
             binary_true_responses=[]
         )
-        patients_classes = self.train_dataset.binary_response
-        # TODO: do I reaelly need to do that?
-        #  Maybe I could simply use self.train_dataset.data
+
+        if set(train_dataset.data.keys()) - set(pipeline.block_pipelines.keys()) and verbose:
+            print('Note: the pipeline does not utilize all of the data blocks')
+
         train_data = {
-            block: getattr(self.train_dataset, block)
+            block: train_dataset.data[block]
             for block in pipeline.block_pipelines.keys()
         }
 
-        some_block = next(iter(train_data.values()))
-        assert all(
-            all(train_block.index == some_block.index)
-            for train_block in train_data.values()
-        )
+        assert self.are_blocks_indexes_aligned(train_data) is True
 
-        if early_normalization:
-            abundance_transformed = pipeline.transformed_blocks
-        else:
-            abundance_transformed = clone(pipeline).fit_transform_blocks(train_data).transformed_blocks
+        # note: one should compare the abundances from early and late normalization;
+        # if they differ too much, this might explain low performance (if there is such)
+        # > abundance_from_early_normalization = pipeline.transformed_blocks
+        # later normalization:
+        abundance_transformed = clone(pipeline).fit_transform_blocks(train_data).transformed_blocks
 
         coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=abundance_transformed)
 
-        # shuffle split
-        seed = 0
+        patients_classes = train_dataset.binary_response
 
         if verbose:
             print('Fitting cross-validation models...')
 
-        iterable = tqdm(range(n), total=n) if progress_bar else range(n)
-
-        for i in iterable:
-
-            if permute:
-                shuffle(patients_classes)
-
-            ok = False
-
-            if multi_scale:
-                test_size = uniform(test_size_min, test_size_max)
-            else:
-                test_size = test_size_min
-
-            train_binary: Series
-            test_binary: Series
-            while not ok:
-                (
-                    train_binary, test_binary,
-                    train_patients, test_patients
-                ) = train_test_split(
-                    patients_classes,
-                    self.train_dataset.observations,
-                    test_size=test_size,
-                    stratify=patients_classes if stratify else None,
-                    random_state=seed if use_seed else None
-                )
-                seed += 1
-
-                # we have so few patients that we need to check if split
-                # has at least one in each class...
-                train_values = train_binary.value_counts(sort=False)
-                test_values = test_binary.value_counts(sort=False)
-                if (
-                    train_values.min() >= min_class_members
-                    and len(train_values) == min_classes_number
-                    and test_values.min() >= min_class_members
-                    and len(test_values) == min_classes_number
-                ):
-                    ok = True
-                elif verbose:
-                    print('Skipping a split with too few response samples')
-
+        for train_indices, test_indices in cv.split(x=train_dataset.observations, y=patients_classes):
             train: Dict[str, DataFrame] = {}
             test: Dict[str, DataFrame] = {}
             for block, data in train_data.items():
-                train[block] = train_data[block].loc[train_patients]
-                test[block] = train_data[block].loc[test_patients]
+                # TODO: use .values to speed up?
+                train[block] = train_data[block].iloc[train_indices]
+                test[block] = train_data[block].iloc[test_indices]
 
             split_pipeline: MultiBlockPipeline = clone(pipeline)
+            split_pipeline.fit(train)
 
-            if early_normalization:
-                split_pipeline.transformed_blocks = {
-                    name: block.loc[train_patients]
-                    for name, block in pipeline.transformed_blocks.items()
-                }
-                for name, p in pipeline.block_pipelines.items():
-                    split_pipeline.block_pipelines[name] = p
+            test_ratio = len(test_indices) / (len(train_indices) + len(test_indices))
 
-                split_pipeline.fit_from_transformed(split_pipeline.transformed_blocks)
-            else:
-                split_pipeline.fit(train)
-
-            self.estimators.append(split_pipeline)
+            self.splits.append({
+                'test_ratio': test_ratio,
+                'train_ratio': 1 - test_ratio,
+                'pipeline': split_pipeline
+            })
 
             coefficients_manager.add(split_matrices=split_pipeline.transformed_blocks, pipeline=split_pipeline)
 
             if only_coefficients:
                 continue
 
-            cv_dataset = MultiBlockDataSet(
-                test,
-                case_class=self.train_dataset.case_class,
-                response=self.train_dataset.response
-            )
+            cv_dataset = MultiBlockDataSet(test, case_class=train_dataset.case_class, response=train_dataset.response)
 
             prediction = split_pipeline.predict(split_pipeline, cv_dataset)
             cv_results.predicted_probabilities.append(prediction)
@@ -182,8 +137,9 @@ class CrossValidation:
             binary_true_responses=[]
         )
 
-        for estimator in tqdm(self.estimators):
-            prediction = estimator.predict(estimator, dataset)
+        for split in tqdm(self.splits):
+            pipeline = split['pipeline']
+            prediction = pipeline.predict(pipeline, dataset)
             result.predicted_probabilities.append(prediction)
             result.binary_true_responses.append(dataset.binary_response)
 
@@ -195,7 +151,7 @@ class CrossValidationResult:
     # CrossValidation stores all estimators, coefficients and contributions obtained across cross-validation splits
     cross_validation: CrossValidation
 
-    # Coefficients obtained by the model trained on full training set
+    # Coefficients obtained by the model trained on a full training set
     coefficients: AttributesStore[Coefficients]
     contributions: AttributesStore[Contributions]
 
@@ -208,10 +164,13 @@ class CrossValidationResult:
     # result for the model trained on the ALL training set and tested on the holdout set
     test_result: Result
 
-    # NOTE: the pipeline is re-trained on the full training set;
+    # NOTE: the pipeline is re-trained on the full training set using chosen_params (if any);
     # as such they should not be used to obtain predictions of the training set for the
     # performance assessment, as this is better served by the cross validated results.
     pipeline: MultiBlockPipeline
+
+    # original pipeline, not fitted
+    original_pipeline: MultiBlockPipeline
 
     # this will produce over-optimistic prediction assessment
     # when compared to real world performance, due to moderate
@@ -226,6 +185,9 @@ class CrossValidationResult:
     # Scaling may have larger data leakage (depending on the scaler)
     # and thus may completely trash the performance assessment!
     early_normalization: bool
+
+    chosen_params: dict
+    good_params: DataFrame
 
     @property
     def validation_dataset(self) -> MultiBlockDataSet:
@@ -261,56 +223,134 @@ class CrossValidationResult:
         return result
 
 
-def repeated_cross_validation(
+def choose_params(cross_validation, pipeline, verbose) -> Tuple[dict, DataFrame]:
+
+    best_params = None
+    good_params = None
+
+    # a little bit of duck-typing to check if any parameters were estimated:
+    if isinstance(pipeline.model, BaseSearchCV) or hasattr(pipeline.model, 'cv'):
+        if verbose:
+            print('Choosing best parameters out of the ', type(pipeline.model))
+
+        # the best params set is chosen in voting:
+        good_params_list = []
+        good_scores = defaultdict(list)
+
+        for split in cross_validation.splits:
+            internal_cv: BaseSearchCV = split['pipeline'].model
+            params = internal_cv.best_params_
+            good_params_list.append(params)
+            good_scores[frozenset(params.items())].append(internal_cv.best_score_)
+
+        good_params = DataFrame(good_params_list)
+        vote_result = (
+            good_params
+            .groupby(list(good_params.columns))
+            .size()
+            .sort_values(ascending=False)
+            .rename('vote_')
+        )
+
+        # TODO: sort by vote and then by score
+        good_params_sorted_by_vote = vote_result.reset_index().drop('vote_', axis=1)
+
+        best_params = good_params_sorted_by_vote.iloc[0].to_dict()
+        second_best_params = good_params_sorted_by_vote.iloc[1].to_dict()
+
+        scores_of_winner = Series(good_scores[frozenset(best_params.items())])
+        scores_of_second = Series(good_scores[frozenset(second_best_params.items())])
+        print(
+            f'Params chosen with CV vote: {best_params},'
+            f' based on voting: {vote_result.head().to_dict()} '
+            f' with average {pipeline.model.refit}={scores_of_winner.mean()}±{scores_of_winner.std()},'
+            f' compared to {scores_of_second.mean()}±{scores_of_second.std()} of the next best choice'
+            f' ({second_best_params}).'
+        )
+
+    return best_params, good_params
+
+
+def cross_validate_and_test(
     pipeline: MultiBlockPipeline, train_data: Dict[str, DataFrame],
-    response, case_class='Tuberculosis',
-    n=1000, use_seed=False, stratify=True,
-    permute=False, progress_bar=True,
+    response, case_class, n=1000,
+    use_seed=False, stratify=True,
+    randomize: Union[str, RandomizeCallback] = False, progress_bar=True,
     only_coefficients=False, stripped=False,
     early_normalization=False,
     verbose=False,
     test_data: Dict[str, DataFrame] = None,
     coefficients={'x': 'coef_'},
     multi_scale=True, test_size_min=0.3, test_size_max=0.3,
-    min_class_members=2
+    min_class_members=2, min_classes_number=2, max_class_number=2
 ) -> CrossValidationResult:
     assert case_class in set(response)
 
     train_dataset = MultiBlockDataSet(data=train_data, case_class=case_class, response=response)
-    test_dataset = MultiBlockDataSet(data=test_data if test_data is not None else [], case_class=case_class, response=response)
+    test_dataset = MultiBlockDataSet(data=test_data or [], case_class=case_class, response=response)
+
+    if randomize:
+        if verbose:
+            print('Shuffling the response vector of the train dataset...')
+        train_dataset = train_dataset.randomized(method=randomize)
 
     if early_normalization:
+        assert isinstance(pipeline, LeakyPipeline)
         pipeline.fit_transform_blocks(train_dataset.data)
 
     cross_validation = CrossValidation(train_dataset=train_dataset)
 
-    cv_results = cross_validation.cross_validate(
-        pipeline,
-        n=n, use_seed=use_seed, stratify=stratify, only_coefficients=only_coefficients,
-        stripped=stripped, permute=permute, progress_bar=progress_bar, verbose=verbose,
-        coefficients=coefficients, early_normalization=early_normalization,
-        multi_scale=multi_scale, test_size_min=test_size_min, test_size_max=test_size_max,
-        min_class_members=min_class_members
+    if multi_scale:
+        assert test_size_max != test_size_min
+    else:
+        assert test_size_max == test_size_min
+
+    validate_split = classification_split_validator(
+        min_class_members_n=min_class_members,
+        min_classes_n=min_classes_number,
+        max_classes_n=max_class_number
     )
 
-    sub_sampling_test_result = cross_validation.validate(test_dataset) if test_data is not None else None
+    cv = IndependentMultiSizeShuffleSplits(
+        shuffle_cv=StratifiedShuffleSplit if stratify else ShuffleSplit,
+        n_sizes=n, test_sizes=(test_size_min, test_size_max),
+        validator=validate_split, progress_bar=progress_bar,
+        # ShuffleSplit arguments
+        random_state=0 if use_seed else None, n_splits=1  # splits for each split size
+    )
+
+    cv_results = cross_validation.cross_validate(
+        pipeline, cv=cv, only_coefficients=only_coefficients,
+        stripped=stripped, verbose=verbose,
+        coefficients=coefficients
+    )
+
+    sub_sampling_test_result = cross_validation.validate(test_dataset) if test_data else None
+
+    best_params, good_params = choose_params(cross_validation, pipeline, verbose)
 
     if verbose:
-        print('Re-fitting on the entire dataset...')
+        if best_params:
+            print(f'Re-fitting on the entire dataset using parameters from CV: {best_params}')
+        else:
+            print('Re-fitting on the entire dataset (no parameters estimated)...')
 
-    if early_normalization:
-        pipeline.fit_from_transformed(pipeline.transformed_blocks)
-    else:
-        pipeline.fit(train_dataset.data)
+    fitted_pipeline = clone(pipeline)
+    if best_params:
+        fitted_pipeline.model = fitted_pipeline.model.estimator.set_params(**best_params)
+
+    # NOTE: this pipeline should not be used blindly; if any parameter estimation was performed,
+    # the best estimator should be chosen using the cross_validation
+    fitted_pipeline.fit(train_dataset.data)
 
     test_result = Result.from_test_set(
-        pipeline=pipeline,
+        pipeline=fitted_pipeline,
         test_set=test_dataset,
         train_set=train_dataset
-    ) if test_data is not None else None
+    ) if test_data else None
 
-    coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=pipeline.transformed_blocks)
-    coefficients_manager.add(split_matrices=pipeline.transformed_blocks, pipeline=pipeline)
+    coefficients_manager = CoefficientsManager(coefficients, abundance_matrices=fitted_pipeline.transformed_blocks)
+    coefficients_manager.add(split_matrices=fitted_pipeline.transformed_blocks, pipeline=fitted_pipeline)
     coefficients_manager.concatenate()
 
     return CrossValidationResult(
@@ -320,7 +360,8 @@ def repeated_cross_validation(
         contributions=coefficients_manager.to_store(subclass=Contributions, skip_compute=stripped),
 
         # pipelines
-        pipeline=pipeline,
+        original_pipeline=pipeline,
+        pipeline=fitted_pipeline,
         cross_validation=cross_validation,
 
         # results
@@ -329,26 +370,29 @@ def repeated_cross_validation(
         sub_sampling_test_results=sub_sampling_test_result,
 
         # parameters
-        early_normalization=early_normalization
+        early_normalization=early_normalization,
+        chosen_params=best_params,
+        good_params=good_params
     )
 
 
-def null_distributions_over_cv(pipeline, omic, response, block, permutations=100, **kwargs):
+def null_distributions_over_cv(
+    pipeline: MultiBlockPipeline, train_data, response, block, method='permute', permutations=100,
+    groups=('test', 'cross_validation'),
+    kinds=('coefficients', 'contributions'),
+    **kwargs
+):
     """Null distributions for an alternative hypothesis that the:
     a) mean coefficient value over cross validations is not random
     b) mean contribution value over cross validations is not random
 
     Arguments:
-        pipeline: the extended pipeline
-        omic: passed to cross_validated_lasso
-        response: passed to cross_validated_lasso
+        pipeline: a multi-block pipeline
+        method: randomization method (permute, bootstrap or custom callback)
         block: x or y
         permutations: number of permutations
-        **kwargs: passed to cross_validated_lasso
+        **kwargs: passed to cross_validate_and_test method
     """
-
-    groups = {'test', 'cross_validation'}
-    kinds = {'coefficients', 'contributions'}
 
     nulls = {
         group: {
@@ -359,9 +403,9 @@ def null_distributions_over_cv(pipeline, omic, response, block, permutations=100
     }
 
     for i in tqdm(range(permutations)):
-        result = repeated_cross_validation(
-            pipeline, omic, response=response,
-            permute=True, progress_bar=False,
+        result = cross_validate_and_test(
+            pipeline, train_data, response=response,
+            randomize=method, progress_bar=False,
             only_coefficients=True, stripped=True,
             **kwargs
         )
@@ -383,6 +427,7 @@ def null_distributions_over_cv(pipeline, omic, response, block, permutations=100
     })
 
 
+# TODO move out of here
 def performance_comparison(
     pipeline, omic, datasets, patients_filter, to_compare,
     datasets_subset=None,
@@ -401,7 +446,7 @@ def performance_comparison(
         if datasets_subset and name not in datasets_subset:
             continue
 
-        results = repeated_cross_validation(
+        results = cross_validate_and_test(
             pipeline,
             norm_rna if omic == 'RNA' else norm_protein,
             patients_filter, use_seed=True, **kwargs

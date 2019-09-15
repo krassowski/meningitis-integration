@@ -1,12 +1,14 @@
+from abc import ABC, abstractmethod
 from dataclasses import field
 from functools import partial
 from types import SimpleNamespace, FunctionType
-from typing import List
+from typing import List, Callable, Union
+from warnings import warn
 
 import pandas as pd
 from pandas import Series
 
-from .data_classes import MultiBlockDataSet, dataclass
+from .data_classes import MultiBlockDataSet, Block
 from .multi_block_pipeline import MultiBlockPipeline
 from .roc_auc import roc_auc_plot_data, compute_cv_statistics
 
@@ -53,7 +55,7 @@ class Result:
     @classmethod
     def from_test_set(cls, pipeline: MultiBlockPipeline, test_set: MultiBlockDataSet, train_set=None):
         return cls(
-            predicted_probabilities=[pipeline.predict(pipeline, test_set)],
+            predicted_probabilities=[pipeline.predict.fit_predict(pipeline, test_set)],
             binary_true_responses=[test_set.binary_response],
             test_data=test_set,
             train_data=train_set
@@ -71,14 +73,10 @@ class Result:
             .mean()
         )
 
-        # reorder to match the test data:
-        # mean_probability = mean_probability.loc[self.test_data.observations]
-        # NOPE - this could cause an issue when only a subset of full test data
-        # was evaluated (producing nans)
-
+        # NOTE: no reordering here
         if set(mean_probability.index) != set(self.test_data.observations):
             missing = set(self.test_data.observations) - set(mean_probability.index)
-            print(
+            warn(
                 f'Warning: not all of the test observations were predicted'
                 f' prior to consensus ranking: {len(missing)} missing out of'
                 f' {len(mean_probability)}'
@@ -108,3 +106,97 @@ class Result:
             self.predicted_probabilities,
             self.binary_true_responses
         )[0]
+
+
+PredictionFunction = Callable[[MultiBlockPipeline, Block], Series]
+
+
+class PipelinePredictor(ABC):
+
+    @abstractmethod
+    def fit(self, pipeline: MultiBlockPipeline):
+        """Fit to given pipeline."""
+
+    @abstractmethod
+    def predict(self, dataset: MultiBlockDataSet):
+        """Predict (probabilities or classes) for given dataset."""
+
+    def fit_predict(self, pipeline: MultiBlockPipeline, dataset: MultiBlockDataSet):
+        """Fit to the pipeline and predict for the dataset."""
+        self.fit(pipeline)
+        return self.predict(dataset)
+
+    def __call__(self, pipeline: MultiBlockPipeline, dataset: MultiBlockDataSet):
+        return self.fit_predict(pipeline, dataset)
+
+
+class RobustTwoBlockPredictor(PipelinePredictor):
+    """A utility wrapper around prediction function for use in real-world pipelines,
+
+    which use filtering and may receive data with nans, which needs to be accounted for.
+    """
+    fitted_block: Block = None
+    pipeline: MultiBlockPipeline = None
+
+    def __init__(self, predict: Union[PredictionFunction, str], verbose=False):
+        """
+        Args:
+            predict: a function callback returning predictions given a MultiBlockPipeline and a dataset,
+                or name of a method of the pipeline, which is a prediction function (e.g. 'predict_proba' for sklearn)
+            verbose: whether diagnostic messages should be displayed
+        """
+        self._predict = predict
+        self.verbose = verbose
+
+    def remove_nans(self, data: Block, response: Block):
+        if data.isnull().any().any():
+            if self.verbose:
+                print('Dropping nans: ', data.isnull().any(axis=1).sum())
+            not_dropped = data.index[~data.isnull().any(axis=1)]
+            data = data.dropna(axis=0)
+            response = response.loc[not_dropped]
+        return data, response
+
+    def select_variables_by_fitted_filter(self, data: Block):
+        if len(self.fitted_block.columns) != len(data.columns) or (self.fitted_block.columns != data.columns).all():
+            if self.verbose:
+                print('Taking only the variables as selected in the previously fitted model')
+            difference = self.fitted_block.columns.difference(data.columns)
+            assert not difference.any()  # this can happen if outliers are excluded from one block only
+            data = data.loc[:, self.fitted_block.columns].fillna(0)
+        return data
+
+    def fit(self, pipeline: MultiBlockPipeline):
+        full_blocks = pipeline.combine.transform(pipeline.transformed_blocks)
+        full_blocks = pipeline.adapter.transform(full_blocks)
+        self.fitted_block = full_blocks['X']
+        self.pipeline = pipeline
+
+    def predict(self, dataset: MultiBlockDataSet):
+        blocks = self.pipeline.partial_transform(blocks=dataset.data)
+        if len(blocks) == 2:
+            data = blocks['X']
+            response = blocks['y']
+
+            data, response = self.remove_nans(data, response)
+            data = self.select_variables_by_fitted_filter(data)
+
+            if callable(self._predict):
+                p = self._predict(self.pipeline, data)
+            else:
+                p = self.pipeline.call(self._predict, data)
+                p = p[:, 1]
+            return Series(p, index=response)
+        else:
+            raise ValueError(
+                'predict_proba can only handle two blocks after combination'
+                '(with one being the outcome);'
+                f' {len(blocks)} provided'
+            )
+
+
+def predict_proba(pipeline: MultiBlockPipeline, dataset: MultiBlockDataSet):
+    """This is intended to work with standard sklearn API
+    (usually for a single data block + single response block).
+    """
+    return RobustTwoBlockPredictor(predict='predict_proba').fit_predict(pipeline, dataset)
