@@ -8,6 +8,7 @@ from pandas import Series
 from sklearn.base import BaseEstimator, clone
 from sklearn.pipeline import Pipeline
 
+from machine_learning.coefficients import CoefficientsGetter
 from .adapter import BlocksAdapter, SklearnAdapter
 from .combine import BlocksCombiner
 from .data_classes import BlockId, Blocks, Block, BlocksWrapper
@@ -135,13 +136,16 @@ class MultiBlockPipeline(BaseEstimator, ValidatedModel):
         method = self.attribute(attribute)
         return method(*args, **kwargs)
 
-    def get_coefficients(self, index: Series, coefficient='coef_'):
-        coef = find_attribute(self.model, attribute=coefficient)
-        # TODO: this is a hack, revise API instead!
-        if coefficient.endswith('_'):
-            coef = coef[0]
+    def get_coefficients(self, index: Series, coefficient: CoefficientsGetter = 'coef_'):
+        if callable(coefficient):
+            coef = coefficient(self)
         else:
-            coef = coef[:, 0]
+            coef = find_attribute(self.model, attribute=coefficient)
+            # TODO: this is a hack, revise API instead!
+            if coefficient.endswith('_'):
+                coef = coef[0]
+            else:
+                coef = coef[:, 0]
         return Series(coef, index=index)
 
 

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import partial
 from math import sqrt, log2
-from typing import Type, Dict
+from typing import Type, Dict, Union, Callable
 
 import pandas as pd
 from numpy import sign
@@ -14,6 +14,9 @@ from helpers.p_values import gpd_p_value
 from helpers.r import p_adjust, r_function, r_function_numpy
 
 from .data_classes import AttributesStore, dataclass
+
+
+CoefficientsGetter = Union[str, Callable]
 
 
 @dataclass
@@ -247,7 +250,7 @@ class Contributions(Coefficients):
 
 class CoefficientsManager:
 
-    def __init__(self, coefficients, abundance_matrices: Dict):
+    def __init__(self, coefficients: Dict[str, CoefficientsGetter], abundance_matrices: Dict):
         self.abundance_matrices = abundance_matrices.copy()
         self.matrix_to_attribute = coefficients
         assert not (coefficients.keys() - {'x', 'y', 'combined'})
