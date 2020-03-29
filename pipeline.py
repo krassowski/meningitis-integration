@@ -29,7 +29,10 @@ NotebookRule(
 
 NotebookRule(
     'Explore SOMAScan technology & check quality',
-    input={'protein_levels_path': 'data/clean/protein/levels.csv'},
+    input={
+        'protein_levels_path': 'data/clean/protein/levels.csv',
+        'clinical_data_path': 'data/clean/clinical/data.csv'
+    },
     output=dict(aptamers_path = 'data/other/relevant_aptamers.csv'),
     notebook='exploration/protein/Exploration_and_quality_control.ipynb',
     group='Proteomics'
@@ -281,28 +284,62 @@ clinical_path = 'data/clean/protein/clinical_data_ordered_to_match_proteins_matr
     group='Proteomics'
 )
 
-# TODO:
 NotebookRule(
     'Differential expression',
     notebook='analyses/rnaseq_vs_clinical/Differential_expression.ipynb',
-    group='RNA'
+    group='RNA',
+    input = dict(
+        clinical_deseq2_path = 'data/clean/rna/clinical_data_ordered_to_match_rna_deseq2.csv',
+        clinical_counts_path = 'data/clean/rna/clinical_data_ordered_to_match_rna_counts.csv',
+
+        # normalized counts
+        deseq2_path = 'data/clean/rna/all_samples.csv',
+        # raw counts
+        counts_path = 'data/clean/rna/all_samples_counts.csv',
+
+        ensembl_to_entrez_path = 'data/ensembl_to_entrez.csv',
+
+        # for comparison
+        definite_tbm_cm_deg_path = 'data/preliminary_analyses/deg/definite_tbm-cm.csv',
+        definite_tbm_vm_deg_path = 'data/preliminary_analyses/deg/definite_tbm-vm.csv',
+    ),
+    output = dict(
+        results_path = 'data/preliminary_analyses/differential_rna_expression/',
+        normalized_counts_path = 'data/preliminary_analyses/differential_rna_expression/normalized_counts'
+    )
 )
 
 NotebookRule(
     'Subset clinical data for transcriptomic analyses',
     notebook='analyses/rnaseq_vs_clinical/Subset_clinical_data.ipynb',
-    group='RNA'
+    group='RNA',
+    input = dict(
+        rna_deseq2_path = 'data/clean/rna/all_samples.csv',
+        rna_counts_path = 'data/clean/rna/all_samples_counts.csv',
+        clinical_path = 'data/clean/clinical/data_with_derived_variables.csv',
+    ),
+    output = dict(
+        out_deseq2_path = 'data/clean/rna/clinical_data_ordered_to_match_rna_deseq2.csv',
+        out_counts_path = 'data/clean/rna/clinical_data_ordered_to_match_rna_counts.csv',
+    )
 )
 
 NotebookRule(
     'RNAseq sanity checks',
     notebook='analyses/rnaseq_vs_clinical/RNAseq_sanity_checks.ipynb',
     group='RNA'
+    # inputs defined as a cell tag
+    # input = dict(
+    #    clinical_deseq2_path = 'data/clean/rna/clinical_data_ordered_to_match_rna_deseq2.csv',
+    #    # normalized counts
+    #    deseq2_path = 'data/clean/rna/all_samples.csv',
+    #)
 )
 
+# TODO:
 
-NotebookRule(
-    'Limma_vs_DESeq2.ipynb',
-    notebook='analyses/rnaseq_vs_clinical/_Limma_vs_DESeq2_-_comparison.ipynb',
-    group='RNA'
-)
+#NotebookRule(
+#    'Limma_vs_DESeq2.ipynb',
+#    notebook='analyses/rnaseq_vs_clinical/_Limma_vs_DESeq2_-_comparison.ipynb',
+#    group='RNA'
+#)
