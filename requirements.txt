@@ -12,7 +12,7 @@ xlrd
 matplotlib
 tzlocal
 inflection
-goatools
+goatools==0.8.12
 scikit-learn==0.22.1
 enhanced_multiprocessing
 gsea_api

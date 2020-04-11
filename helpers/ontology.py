@@ -11,7 +11,12 @@ class ProteinOntologyClassifier:
     def classify_by(self, parent_term):
         def classifier(uniprot):
             processes = set()
-            for go in self.associations[uniprot]:
+            associations = (
+                self.associations[uniprot]
+                if uniprot in self.associations else
+                []
+            )
+            for go in associations:
                 if go not in self.ontology:
                     print('skipping ' + go)
                     continue
@@ -70,7 +75,7 @@ def transform_to_classes(data, classification):
     relative_importance = relative_importance.fillna(0)
     
     # reorder proteins to match the protein_values_of_patient
-    ordered_processes = relative_importance.loc[data.index]
+    ordered_processes = relative_importance.reindex(data.index)
     transformation = partial(transform_patient_proteins, ordered_processes=ordered_processes)
     reduced_to_processes = data.apply(transformation)
     
