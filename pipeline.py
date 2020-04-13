@@ -303,7 +303,10 @@ NotebookRule(
     ),
     output = dict(
         results_path = 'data/preliminary_analyses/differential_rna_expression/',
-        normalized_counts_path = 'data/preliminary_analyses/differential_rna_expression/normalized_counts'
+
+        normalized_counts_path = 'data/preliminary_analyses/differential_rna_expression/normalized_counts',
+        rna_tmm_normalized_counts_path = 'data/preliminary_analyses/differential_rna_expression/normalized_counts/tmm_for_subsets.csv',
+        rna_rle_normalized_counts_path = 'data/preliminary_analyses/differential_rna_expression/normalized_counts/rle_for_subsets.csv'
     )
 )
 
