@@ -206,13 +206,11 @@ clinical_subset_for_proteomics = NotebookRule(
 NotebookRule(
     'Total CSF protein',
     notebook='analyses/protein_vs_clinical/Total_CSF_protein.ipynb',
-    input={
-        **clinical_subset_for_proteomics.outputs,
-        **dict(
-            indexed_by_target_path = 'data/clean/protein/indexed_by_target.csv',
-            log_matrix_path = 'data/clean/protein/log_10.csv'
-        )
-    },
+    input=dict(
+        indexed_by_target_path = 'data/clean/protein/indexed_by_target.csv',
+        log_matrix_path = 'data/clean/protein/log_10.csv',
+        subset_path = 'data/clean/protein/clinical_data_ordered_to_match_proteins_matrix.csv'
+    ),
     group='Proteomics'
 )
 

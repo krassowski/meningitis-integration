@@ -22,3 +22,10 @@ cd hgnc
 wget "https://www.genenames.org/cgi-bin/download/custom?col=gd_pub_ensembl_id&col=gd_pub_eg_id&status=Approved&hgnc_dbtag=on&order_by=gd_app_sym_sort&format=text&submit=submit" -O ensembl_gene_to_entrez.tsv
 python clean_ensembl_entrez_mapping.py
 cd ..
+
+
+wget https://reactome.org/download/current/ReactomePathways.gmt.zip
+unzip ReactomePathways.gmt.zip
+
+wget "https://www.genenames.org/cgi-bin/download/custom?col=gd_app_sym&col=gd_pub_ensembl_id&status=Approved&hgnc_dbtag=on&format=text&submit=submit" -O ensembl_to_gene_symbol.tsv
+# wget "https://www.genenames.org/cgi-bin/download/custom?col=gd_app_name&col=gd_pub_ensembl_id&status=Approved&hgnc_dbtag=on&format=text&submit=submit" -O ensembl_to_gene_name.tsv
