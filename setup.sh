@@ -5,7 +5,7 @@ sudo apt-get install graphviz libgraphviz-dev graphviz-dev # (not used directly,
 
 pip3 install -r requirements.txt
 cd helpers
-wget https://raw.githubusercontent.com/krassowski/pyvenn/master/venn.py -o _venn.py
+wget https://raw.githubusercontent.com/krassowski/pyvenn/master/venn.py -O _venn.py
 cd ..
 Rscript install.R
 
