@@ -29,3 +29,5 @@ unzip ReactomePathways.gmt.zip
 
 wget "https://www.genenames.org/cgi-bin/download/custom?col=gd_app_sym&col=gd_pub_ensembl_id&status=Approved&hgnc_dbtag=on&format=text&submit=submit" -O ensembl_to_gene_symbol.tsv
 # wget "https://www.genenames.org/cgi-bin/download/custom?col=gd_app_name&col=gd_pub_ensembl_id&status=Approved&hgnc_dbtag=on&format=text&submit=submit" -O ensembl_to_gene_name.tsv
+
+wget https://bitbucket.org/jdblischak/tb-data/raw/bc0f64292eb8c42a372b3a2d50e3d871c70c202e/table-s2.txt -O GSE67427-table-s2.txt
