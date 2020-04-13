@@ -43,10 +43,10 @@ mean_and_variance = function(y, ...) {
 
 mean_variance_plot = function(stats, color='red', ...) {
     plot(stats$mean, stats$variance, ...)
-    tryCatch( {
+    tryCatch({
             lines(lowess(stats$variance ~ stats$mean), col=color)
         },
-        error=function(cond){
+        error=function(cond) {
             print('failed to compute loess (delta problem)')
         }
     )
@@ -69,7 +69,7 @@ choose_regions_above_the_mean = function(
         )
     }
 
-    if(only_monotonic) {
+    if (only_monotonic) {
         chosen_minimum = min(distances)
         minima = sort(distances)
         candidate_breakpoint = which(distances == chosen_minimum)
@@ -80,7 +80,7 @@ choose_regions_above_the_mean = function(
             chosen_minimum = minima[nth]
             candidate_breakpoint = which(distances == chosen_minimum)
         }
-        if(verbose && nth != 1) {
+        if (verbose && nth != 1) {
             print(paste(
                 'Skipped', nth, 'non-monotonic breakpoint candidates'
             ))
@@ -105,7 +105,7 @@ choose_regions_above_the_mean = function(
 
     # once we can no longer select regions above mean, we shrink all that remained
     # (the regions which are very close to the mean).
-    if(!any(to_correct) & any(!corrected_so_far)) {
+    if (!any(to_correct) & any(!corrected_so_far)) {
         if (verbose)
             print('No unseen observations above selected breakpoint; correcting remaining observations')
         list(to_correct=!corrected_so_far, swap_to=mean(trend[!corrected_so_far]))
@@ -171,15 +171,15 @@ loess_trend_correction = function(
         else
             delta < epsilon
     }
-    
-    while(
+
+    while (
         # max_iter condition is always applied to prevent too long loops
         !stop_condition() && i < max_iter && steps < max_steps
     ) {
 
-        if(plot_iterations)
+        if (plot_iterations)
             mean_variance_plot(stats, color="yellow", main=paste('Iteration', i))
-        
+
         centered = t(scale(t(matrix), scale=F))
 
         # sh multiplication is shape broadcasting,
@@ -188,7 +188,7 @@ loess_trend_correction = function(
         to_correct = sh * regions$to_correct
         corrected_so_far = corrected_so_far | regions$to_correct
 
-        
+
         max_abs_std_local = max(ifelse(to_correct, abs(stats$variance - predicted_variance), -Inf))
         diff = ifelse(
             to_correct,
@@ -207,7 +207,7 @@ loess_trend_correction = function(
             0
         )
         matrix = matrix - diff
-        
+
         y = voom_cpm(matrix, dge)
         stats = estimate(y, design)
 
@@ -219,20 +219,20 @@ loess_trend_correction = function(
         last_mean = new_mean
 
         i = i + 1
-            
+
         ## we got full coverage, let's reset the correction mask and store the result
-        if(all(corrected_so_far)) {
+        if (all(corrected_so_far)) {
             corrected_so_far = is.null(predicted_variance)
             result = matrix
             steps = steps + 1
         }
-        else if(!require_all_corrected) {
+        else if (!require_all_corrected) {
             result = matrix
             steps = steps + 1
         }
     }
-            
-    if(plot_iterations)
+
+    if (plot_iterations)
         mean_variance_plot(stats, color="yellow", main=paste('Iteration', i))
 
     print(paste(
@@ -246,8 +246,8 @@ loess_trend_correction = function(
 deseq_transfroms = list(
     vst=DESeq2::vst,
     rlog=DESeq2::rlog,
-    ntd=function(dds, blind){
-        if(!blind)
+    ntd=function(dds, blind) {
+        if (!blind)
             stop('log-norm transform is always blind, pass blind=T to silence this error')
         DESeq2::normTransform(dds)
     }
@@ -275,8 +275,8 @@ correct_trend = function(
     }
 
     stopifnot(method %in% c('voom', 'loess', names(deseq_transfroms)))
-    
-    if(method %in% names(deseq_transfroms)) {
+
+    if (method %in% names(deseq_transfroms)) {
         transform = deseq_transfroms[[method]]
         coldata = data.frame(group=filtered_dge$samples$group)
 
@@ -288,7 +288,7 @@ correct_trend = function(
         vsd = transform(dds, blind=blind)
         transformed = SummarizedExperiment::assay(vsd)
     }
-    if(method == 'voom') {
+    if (method == 'voom') {
         # unfortunately, this does not work well :(
         v <- limma::voom(filtered_dge, design, plot=F)
 
@@ -296,7 +296,7 @@ correct_trend = function(
 
         lib_size <- filtered_dge$samples$lib.size * filtered_dge$samples$norm.factors
         weights = (t(2^(t(v$weights) / 1e6) * (lib_size + 1)) - 0.5)
-        
+
         matrix = matrix - centered * (1-
             (weights - min(weights))
             /
@@ -307,7 +307,7 @@ correct_trend = function(
 
         transformed = matrix
     }
-    if(method == 'loess') {
+    if (method == 'loess') {
         transformed = loess_trend_correction(
             matrix, filtered_dge, design,
             estimate=estimate, plot_iterations=(to_plot != 'before-after'),
@@ -315,7 +315,7 @@ correct_trend = function(
         )
     }
 
-    if(to_plot == 'before-after') {
+    if (to_plot == 'before-after') {
         y = voom_cpm(transformed, filtered_dge)
         stats = estimate(y, design)
         mean_variance_plot(stats, color="green", main='After correction')
@@ -326,14 +326,14 @@ correct_trend = function(
 
 
 calc_normalization_factors = function(dge, method, test_method=NULL, iterations=1, rescale_lib=T, rescale_factor=T) {
-    if(is.null(test_method)) {
-        
+    if (is.null(test_method)) {
+
         lib_sizes = colSums(dge$counts)
         stopifnot(all(dge$samples$lib.size == lib_sizes))
-        
-        if(iterations != 1)
+
+        if (iterations != 1)
             stop('iterations do not make sense without test_method')
-        if(method == 'qtotal') {
+        if (method == 'qtotal') {
 
             # note from the paper's code it seems that they always scaled the size
             # factors, dividing by the mean -  even for TMM (which is not done in the edgeR::cpm)
@@ -344,7 +344,7 @@ calc_normalization_factors = function(dge, method, test_method=NULL, iterations=
             # silly mistake or a nice way to demonstrate overfitting:
             # size_factors = size_factors * mean(size_factors)
 
-            if(rescale_factor)
+            if (rescale_factor)
                 size_factors = size_factors / mean(size_factors)
 
             dge$samples$norm.factors = size_factors
@@ -356,14 +356,14 @@ calc_normalization_factors = function(dge, method, test_method=NULL, iterations=
             # without intercept which is known to cause problems for voom
             # while I could get great results, I am afraid that this is overfitting.
             # dge$samples$lib.size = lib_sizes / lib_sizes # a vector of 1s
-            
+
             # but this one does not suffer from the above mentioned issues
             dge$samples$lib.size = lib_sizes / lib_sizes * ifelse(rescale_lib, mean(lib_sizes), 1)
 
         }
         else {
             dge = edgeR::calcNormFactors(dge, method = method)
-            
+
             # unscale the lib-sizes if equested
             dge$samples$lib.size = lib_sizes / ifelse(!rescale_lib, mean(lib_sizes), 1)
         }
@@ -403,18 +403,18 @@ normalize_abundance = function(
     matrix, by_condition, normalization_method='TMM',
     trend_correction=NULL, log=TRUE, prior.count=2,
     filter=TRUE, subset_rows=FALSE,
-    trend_args=list(), 
+    trend_args=list(),
     ...
 ) {
     dge = edgeR::DGEList(counts = matrix, group = by_condition)
-    
-    
-    if(filter) {
+
+
+    if (filter) {
         stopifnot(subset_rows == FALSE)
         filtered_dge = filter_out_low_expression(dge, by_condition)
     }
     else {
-        if(subset_rows != FALSE) {
+        if (subset_rows != FALSE) {
             filtered_dge = dge[subset_rows,,keep.lib.sizes=FALSE]
         } else {
             filtered_dge = dge
@@ -424,11 +424,11 @@ normalize_abundance = function(
         filtered_dge, method=normalization_method, ...
     )
 
-    if(!is.null(trend_correction)) {
+    if (!is.null(trend_correction)) {
         design = design_from_conditions(by_condition)
 
         filtered_dge$counts = do.call(
-            correct_trend, 
+            correct_trend,
             c(
                 list(filtered_dge, matrix, dge, design),
                 trend_args,
@@ -438,7 +438,7 @@ normalize_abundance = function(
         # TODO: should I recompute norm factors now?
     }
     # do not transform data corrected by DESeq2, those are already transformed
-    if(
+    if (
         !is.null(trend_correction) && (!trend_correction %in% deseq_transfroms)
     )
         transformed = filtered_dge$counts
