@@ -8,3 +8,5 @@ cd helpers
 wget https://raw.githubusercontent.com/krassowski/pyvenn/master/venn.py -o _venn.py
 cd ..
 Rscript install.R
+
+pyensembl install --release 95 --species homo_sapiens
