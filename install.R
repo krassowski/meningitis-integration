@@ -4,7 +4,8 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 # TODO:
 # should be installed, but fails on Travis
 # install.packages('Hmisc') # DESeq2 dependency
-# BiocManager::install("DESeq2", quiet=T)
+BiocManager::install("DESeq2", quiet=T)
+BiocManager::install("edgeR")
 
 install.packages('devtools', quiet=T)
 install.packages('ggplot2', quiet=T)
