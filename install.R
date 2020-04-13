@@ -46,9 +46,13 @@ BiocManager::install("vsn", quiet=T)
 BiocManager::install("TCC", quiet=T)
 
 BiocManager::install("pROC", quiet=T)
+BiocManager::install("ABSSeq")
 # install.packages('ggforce', quiet=T) - maybe use it for graphics later, right now not needed
 install.packages("cvAUC", quiet=T)
 install.packages('hdi', quiet=T)
 
 install.packages("ggnetwork", quiet=T)
 install.packages('SNFtool', quiet=T)
+install.packages('survminer')
+
+install.packages('reshape')
