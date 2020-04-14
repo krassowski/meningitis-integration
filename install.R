@@ -33,7 +33,7 @@ BiocManager::install("IHW", quiet=T)
 
 # Bioc version is too old, 2.1.0 required
 # BiocManager::install("ComplexHeatmap")
-devtools::install_github("jokergoo/ComplexHeatmap", quiet=T)
+devtools::install_github("jokergoo/ComplexHeatmap@86907a77bfbb3e9325fcc677604f90be33ab574c")
 
 install.packages("pvclust", quiet=T)
 # TODO: remove the occurrences
