@@ -6,21 +6,21 @@ import::here(space_to_dot, dot_to_space, remove_leading_X, .from='../helpers/uti
 
 significant.limma = function(dds_result, alpha=0.05) {
     g = dds_result[complete.cases(dds_result),]
-    g[g$adj.P.Val < alpha,]
+    g[g$adj.P.Val < alpha, ]
 }
 
 
 significant.deseq = function(dds_result, alpha=0.05) {
     g = dds_result[complete.cases(dds_result),]
-    g[g$padj < alpha,]
+    g[g$padj < alpha, ]
 }
 
 
 # TODO: outliers
 # gene subset may be a character vector of gene ids, or a subset of (limma or DESeq2) results data frame
-differential_expression_heatmap = function(genes_subset, counts, skip_cols=outliers, id_to_gene_name=NA, ...) {
+differential_expression_heatmap = function(genes_subset, counts, skip_cols=outliers, id_to_gene_name=NULL, ...) {
 
-    if(nrow(genes_subset) == 0)
+    if (nrow(genes_subset) == 0)
         return(NULL)
 
     padj = NA
@@ -46,8 +46,9 @@ differential_expression_heatmap = function(genes_subset, counts, skip_cols=outli
 
     counts = clean_and_subset_counts(counts, genes_subset, skip_cols=skip_cols)
 
-    if(!is.null(id_to_gene_name))
+    if (!is.null(id_to_gene_name)) {
         rownames(counts) <- id_to_gene_name[rownames(counts), 'gene_name']
+    }
 
     if (!is.null(padj)) {
         rownames(counts) = paste(formatC(padj, format="e", digits=1), rownames(counts), sep='\t')
@@ -74,7 +75,7 @@ differential_expression_heatmap = function(genes_subset, counts, skip_cols=outli
 
 clean_and_subset_counts = function(counts, subset, skip_cols=NA) {
     colnames(counts) <- remove_leading_X(colnames(counts))
-    if(!is.null(skip_cols))
+    if (!is.null(skip_cols))
         counts = counts[,!colnames(counts) %in% skip_cols]
     counts[subset,]
 }
@@ -85,7 +86,7 @@ gene_set_heatmap = function(
     skip_cols=outliers, id_to_gene_name=NA, trim=35, ...
 ) {
 
-    if(nrow(pathways_subset) == 0)
+    if (nrow(pathways_subset) == 0)
         return(NULL)
 
     padj = NA
@@ -133,12 +134,12 @@ gene_set_heatmap = function(
 #}
 
 advanced_differential_expression_heatmap = function(
-    genes_subset, counts, skip_cols=outliers, id_to_gene_name=NA,
+    genes_subset, counts, skip_cols=outliers, id_to_gene_name=NULL,
     main='Differential expression', patients_clustering=NULL,
     ...
 ) {
 
-    if(nrow(genes_subset) == 0)
+    if (nrow(genes_subset) == 0)
         return(NULL)
 
     annotation_row = NA
@@ -162,10 +163,14 @@ advanced_differential_expression_heatmap = function(
     counts = log2(extract_counts(counts) + 0.25)
     counts = clean_and_subset_counts(counts, genes_subset, skip_cols=skip_cols)
 
-    if(!is.null(id_to_gene_name))
-        rownames(counts) <- id_to_gene_name[rownames(counts), 'gene_name']
+    if (!is.null(id_to_gene_name)) {
+        original = rownames(counts)
+        rownames(counts) <- id_to_gene_name[original]
+        is_missing = is.na(rownames(counts))
+        rownames(counts)[is_missing] = original[is_missing]
+    }
 
-    if(is.null(patients_clustering)) {
+    if (is.null(patients_clustering)) {
         if (nrow(counts) > 2)
             patients_clustering <- pvclust::pvclust(
                 scale(counts), parallel=T,
@@ -213,7 +218,7 @@ barplot = function(values, gene_sets, collection) {
 
     l = list()
     i = 0
-    for(set_name in names(sets)) {
+    for (set_name in names(sets)) {
         genes = sets[[set_name]]
         for (gene in genes) {
             i = i + 1
@@ -245,3 +250,4 @@ barplot = function(values, gene_sets, collection) {
         + scale_fill_gradient2(low='navy', mid='white', high='red', midpoint=0)
     )
 }
+            

@@ -4,9 +4,9 @@ library('genefilter')
 # Note: Deseq2 uses alpha=0.1 by default
 filter_by_mean_expression = function(table, fdr_threshold=0.05, step=0.005, expression_col='AveExpr', pvalue_col='P.Value', show_plot=T, use_deseq2_method=F) {
     import::from(genefilter, filtered_p)
-    
+
     theta = seq(from=0.1, to=1, by=step)
-    
+
     if(is.character(expression_col))
         col = table[,expression_col]
     else
@@ -14,14 +14,14 @@ filter_by_mean_expression = function(table, fdr_threshold=0.05, step=0.005, expr
     filtPadj <- filtered_p(filter=col, test=table[,pvalue_col], theta=theta, method="BH")
     sigGenes <- colSums(filtPadj < fdr_threshold, na.rm = TRUE)
 
-    if(show_plot)
+    if (show_plot)
         plot(theta, sigGenes, type="b", xlab="Quantile filtered out", ylab="Significant genes")
     else {
-        if(use_deseq2_method)
+        if (use_deseq2_method)
             j = deseq2_prevent_aggressive_filtering(sigGenes, theta)
         else
             j = which.max(sigGenes)
-        filtPadj[,j]
+        filtPadj[, j]
     }
 }
 

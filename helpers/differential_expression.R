@@ -26,10 +26,10 @@ calculate_means = function(data, design) {
 
 limma_fit = function(data, conditions_vector, a, b, use_all=T, workaround_for_non_transformed_data=F, intercept=T) {
 
-    if(workaround_for_non_transformed_data == T && use_all != T)
+    if (workaround_for_non_transformed_data == T && use_all != T)
         stop('the workaround is only supported when using the full data')
 
-    if(use_all) {
+    if (use_all) {
         # in this scenario I benefit from the additional information about the distribution of protein abundances from other conditions;
         # this might or might not be desirable, however https://support.bioconductor.org/p/73107/ indicates that this is usually beneficial, unless:
         # """
@@ -148,10 +148,10 @@ calc_dge = function(a, b, data, conditions, voom=F, quality_weights=F, ref=F, as
     design <- design_from_conditions(conditions, intercept=ref)
 
     if (voom) {
-        if(quality_weights)
+        if (quality_weights)
             # see https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4551905/
             # NB: it might possible to skip removal of the outliers when using "quality_weights"
-            dge = limma::voomWithQualityWeights(data, design, normalization="none")
+            dge = limma::voomWithQualityWeights(data, design, normalize.method="none")
         else
             # TODO: normalize="quantile"
             dge = limma::voom(data, design)
@@ -168,7 +168,7 @@ calc_dge = function(a, b, data, conditions, voom=F, quality_weights=F, ref=F, as
 
 calc_fit = function(a, b, data, conditions, voom=F, robust=T, use_all=T, ...) {
     ref = choose_ref(a, b, conditions)
-    if(is.na(ref)) {
+    if (is.na(ref)) {
         ref = F
         use_all = F
         print('No reference group, switching use_all off')

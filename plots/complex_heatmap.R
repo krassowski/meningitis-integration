@@ -1,9 +1,9 @@
 import::here(patient_colors, .from='colors.R')
 import::here(convert_signif_codes, signif_codes, signif_thresholds, .from='significance_codes.R')
-import::here( dot_to_space, .from='../helpers/utilities.R')
+import::here(dot_to_space, .from='../helpers/utilities.R')
 #library(ComplexHeatmap)
 
-symbol_for_tb_status = function (statuses) {
+symbol_for_tb_status = function(statuses) {
     unlist(lapply(
         statuses,
         function(status) {
@@ -33,8 +33,8 @@ simple_clinical_annotation = function(annotations, limit_to=NULL, colors=patient
         args = list(
             'HIV status'=annotations[,'HIV status'],
             'Tuberculosis status'=ComplexHeatmap::anno_simple(
-                annotations[,'Tuberculosis status'],
-                pch=symbol_for_tb_status(annotations[,'Tuberculosis status']),
+                annotations[, 'Tuberculosis status'],
+                pch=symbol_for_tb_status(annotations[, 'Tuberculosis status']),
                 col=colors[['Tuberculosis status']],
                 pt_gp = grid::gpar(col="white"),
 
@@ -98,8 +98,8 @@ annotate_pvclust = function(x, n, mapper=convert_signif_codes, col='red', size=2
     au <- as.character(mapped)
 
     a <- grid::grid.text(
-        x=(axes[,1]-0.5)/n,
-        y=axes[,2]/max(axes[,2]) + 0.075,
+        x=(axes[, 1]-0.5)/n,
+        y=axes[, 2]/max(axes[, 2]) + 0.075,
         au,
         gp=grid::gpar(col=col, fontsize=size, ...)
     )
@@ -139,7 +139,7 @@ no_legend = list(
     grid_height=unit(0, 'cm'),
     labels_gp=grid::gpar(col = "white", fontsize=0),
     legend_gp=grid::gpar(col='white', fill=c('white', 'white')),
-    col_fun=function(){'white'},
+    col_fun=function() {'white'},
     title_gp=grid::gpar(col='white'),
     color_bar = "discrete"
 )
@@ -158,7 +158,7 @@ pvclust_heatmap = function(
 
     patients_with_counts = colnames(counts_collapsed)
     names(column_annotations) = dot_to_space(names(column_annotations))
-    
+
     handled_manually = c(
         'Tuberculosis status',
         'HIV status',
@@ -166,44 +166,44 @@ pvclust_heatmap = function(
     )
     cols = colnames(column_annotations)
     other_cols = cols[!cols %in% handled_manually]
-    
+
     clinical_annotations = simple_clinical_annotation(
         # TODO this should be passed as an argument, not taken from the env
         column_annotations, limit_to=patients_with_counts,
         annotation_kwargs=list(show_annotation_name=show_annotation_name)
         # additional=other_cols
     )
-   
-    if(rescale) {
+
+    if (rescale) {
         # first scale columns then rows
         mat = t(scale(t(scale(counts_collapsed))))
     } else {
         mat = counts_collapsed
     }
 
-    name = title
+    name = as.character(title)
 
     cluster_rows = decide_clustering(rows_clustering)
     cluster_columns = decide_clustering(samples_clustering)
 
-    if(!show_ids) {
+    if (!show_ids) {
         colnames(mat) = NULL
         rownames(mat) = NULL
     }
-    
-    limit_to=patients_with_counts
+
+    limit_to = patients_with_counts
     if (!is.null(limit_to))
-        annotations = column_annotations[limit_to,]
+        annotations = column_annotations[limit_to, ]
     args = list(col=patient_colors)
     for (other in other_cols) {
         args[other] = annotations[other]
     }
-    
-    bottom_clinical_annotations = do.call(
-        ComplexHeatmap::HeatmapAnnotation,
-        c(args, show_annotation_name=show_annotation_name),
-    )
-    
+
+    #bottom_clinical_annotations = do.call(
+    #    ComplexHeatmap::HeatmapAnnotation,
+    #    c(args, show_annotation_name=show_annotation_name),
+    #)
+
     ht_list = ComplexHeatmap::Heatmap(
         mat,
         name=name,
@@ -215,8 +215,8 @@ pvclust_heatmap = function(
         column_dend_reorder = is.null(cluster_columns),
         row_dend_reorder = is.null(cluster_rows),
         top_annotation=clinical_annotations$annotation,
-        bottom_annotation=bottom_clinical_annotations,
-        column_dend_height = unit(3, "cm"), 
+        #bottom_annotation=bottom_clinical_annotations,
+        column_dend_height = unit(3, "cm"),
         col=pheatmap_palette(mat),
         row_names_max_width = max_text_width(
             rownames(mat)
@@ -247,12 +247,12 @@ pvclust_heatmap = function(
     ht_lista = ComplexHeatmap::draw(
         ht_list,
         merge_legend = TRUE,
-        heatmap_legend_side = "top", 
+        heatmap_legend_side = "top",
         annotation_legend_side = "top",
         annotation_legend_list=append(clinical_annotations$legends, p_legend),
     )
 
-    if(!is.null(samples_clustering) && 'hclust' %in% attributes(samples_clustering)$names)
+    if (!is.null(samples_clustering) && 'hclust' %in% attributes(samples_clustering)$names)
         ComplexHeatmap::decorate_dend(name, {
             # see https://support.bioconductor.org/p/95294/#95318
             tree = ComplexHeatmap::column_dend(ht_lista)
@@ -280,12 +280,12 @@ pvclust_heatmap = function(
             # maybe TODO: add rects for clusters
         }, envir = as.environment(1L))
 
-    ht_list
+    #ht_list
 }
 
 
 compose_title = function(main, major, minor, latex=T) {
-    if(is.null(main) & (!is.null(major))) {
+    if (is.null(main) & (!is.null(major))) {
         main = paste0(
             '\\overset{',
             major,

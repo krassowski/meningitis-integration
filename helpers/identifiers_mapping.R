@@ -5,6 +5,9 @@ ensembl_to_gene_symbol = ensembl_to_gene_symbol[!duplicated(ensembl_to_gene_symb
 rownames(ensembl_to_gene_symbol) = ensembl_to_gene_symbol[['Ensembl.gene.ID']]
 ensembl_to_gene_symbol = ensembl_to_gene_symbol['Approved.symbol']
 
+ensembl_to_gene_symbol_list = ensembl_to_gene_symbol[['Approved.symbol']]
+names(ensembl_to_gene_symbol_list) = rownames(ensembl_to_gene_symbol)
+
 names_maybe_row = function(df, new_names, row) {
     if (row)
         rownames(df) = new_names
