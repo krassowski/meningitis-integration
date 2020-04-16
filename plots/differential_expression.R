@@ -250,4 +250,21 @@ barplot = function(values, gene_sets, collection) {
         + scale_fill_gradient2(low='navy', mid='white', high='red', midpoint=0)
     )
 }
-            
+
+
+de_comparison_pairplot = function(comparisons, label_top_n=5) {
+    # paired plot
+    df = na.omit(comparisons[comparisons$pvalue_rank < label_top_n,])
+    (
+        ggplot(na.omit(comparisons), aes(x=method, y=(1/pvalue_rank), color=method))
+        + facet_wrap('contrast', scales='free_x')
+        + geom_boxplot(alpha=0.2)
+        + geom_point()
+        + scale_y_log10()
+        + geom_line(aes(group=gene), color='grey', alpha=0.8)
+        + ggrepel::geom_label_repel(data=df, aes(label=name), direction='y', nudge_x=df$side)
+        + nice_theme
+        + scale_color_manual(values=ggthemes::tableau_color_pal('Tableau 10')(3))
+        + geom_text(aes(label=corr), x=-Inf, y=-Inf, vjust=-1, hjust=-0.1, check_overlap=T)
+    )
+}

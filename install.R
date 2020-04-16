@@ -56,3 +56,5 @@ install.packages('SNFtool', quiet=T)
 install.packages('survminer')
 
 install.packages('reshape')
+
+devtools::install_github("krassowski/complex-upset")

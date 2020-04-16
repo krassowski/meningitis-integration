@@ -233,3 +233,27 @@ calc_camera = function(a, b, data, conditions, statistic=NULL, collection=reacto
             limma::camera(dge, collection, design)
     }
 }
+
+
+get_deseq_definite_tb_cm = function(dds, shrinkage=NULL, ref=NULL, ...) {
+    if (is.null(shrinkage)) {
+        result = DESeq2::results(
+            dds,
+            contrast=c('conditions_for_deseq', 'Definite.tuberculosis', 'Cryptococcal'),
+            parallel=T,
+            ...
+        )
+    } else {
+        dds$conditions_for_deseq = relevel(dds$conditions_for_deseq, 'Cryptococcal')
+        dds = nbinomWaldTest(dds)
+
+        result = lfcShrink(
+            dds,
+            coef='conditions_for_deseq_Definite.tuberculosis_vs_Cryptococcal',
+            type=shrinkage,
+            parallel=T,
+            ...
+        )
+    }
+    as.data.frame(result)
+}
