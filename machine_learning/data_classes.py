@@ -167,10 +167,14 @@ class MultiBlockDataSet:
         if isinstance(method, str):
             method = randomization_methods[method]
 
+        # when randomizing, we have to make sure we do not introduce labels from outside of the dataset
+        # (having an outcome for those does not mean that we have the corresponding data)
+        response_subset = list(set(self.observations) & set(self.response.index))
+
         return MultiBlockDataSet(
             data=self.data,
             case_class=self.case_class,
-            response=Series(data=method(self.response.data), index=self.response.index)
+            response=Series(data=method(list(self.response.loc[response_subset])), index=response_subset)
         )
 
     @property
