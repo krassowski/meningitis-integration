@@ -8,3 +8,7 @@ cd helpers
 wget https://raw.githubusercontent.com/krassowski/pyvenn/master/venn.py -O _venn.py
 cd ..
 Rscript install.R
+
+cd thirdparty
+wget https://data.broadinstitute.org/gsea-msigdb/gsea/software/desktop/3.0/gsea-3.0.jar
+cd ..

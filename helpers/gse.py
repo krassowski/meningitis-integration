@@ -14,7 +14,7 @@ def nice_kegg(name):
 
 
 def calculate_overlap(gmt, matrix):
-    all_identifiers = gmt.all_identifiers
+    all_identifiers = gmt.all_genes
 
     soma = set(map(str, matrix.index))
     precentage = len(all_identifiers & soma) / len(soma) * 100
