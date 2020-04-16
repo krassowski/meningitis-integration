@@ -91,7 +91,7 @@ class Coefficients:
         self.order_genes()
 
     def add_abundance(self, abundance):
-        self.data['mean_abundance'] = abundance.sum().loc[self.data.index].values
+        self.data['mean_abundance'] = abundance.sum().reindex(self.data.index).values
 
     def order_genes(self, by='mean'):
         self.data['gene'] = pd.Categorical(

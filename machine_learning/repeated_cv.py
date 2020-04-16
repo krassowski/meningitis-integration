@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import List, Dict, Union, Tuple
+from warnings import warn
 
 from pandas import DataFrame, Series
 import pandas as pd
@@ -229,7 +230,8 @@ def choose_params(cross_validation, pipeline, verbose) -> Tuple[dict, DataFrame]
     good_params = None
 
     # a little bit of duck-typing to check if any parameters were estimated:
-    if isinstance(pipeline.model, BaseSearchCV) or hasattr(pipeline.model, 'cv'):
+    splits = list(cross_validation.splits)
+    if isinstance(pipeline.model, BaseSearchCV) or (splits and hasattr(splits[0]['pipeline'].model, 'best_params_')):
         if verbose:
             print('Choosing best parameters out of the ', type(pipeline.model))
 
@@ -295,7 +297,8 @@ def cross_validate_and_test(
         train_dataset = train_dataset.randomized(method=randomize)
 
     if early_normalization:
-        assert isinstance(pipeline, LeakyPipeline)
+        if not isinstance(pipeline, LeakyPipeline):
+            warn('Using early normalization without leaky pipeline - is this intended?')
         pipeline.fit_transform_blocks(train_dataset.data)
 
     cross_validation = CrossValidation(train_dataset=train_dataset)
