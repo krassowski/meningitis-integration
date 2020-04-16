@@ -428,7 +428,7 @@ plot_contributions_network = function(
     for (group in unique(net$group)) {
         n = net[net$group == group, ]
         edges = n[!is.na(n$frequency), ]
-        genes_with_edges = c(edges$a, edges$b)
+        genes_with_edges = c(as.character(edges$a), as.character(edges$b))
         selected = n[n$gene %in% genes_with_edges, ]
         new_net = rbind(new_net, selected)
     }
