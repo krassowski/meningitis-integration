@@ -337,6 +337,12 @@ NotebookRule(
     #)
 )
 
+NotebookRule(
+    'Uniform preprocessing',
+    notebook='analyses/integration/Uniform_preprocessing.ipynb',
+    group='Integration'
+)
+
 # TODO:
 
 #NotebookRule(
