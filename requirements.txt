@@ -18,4 +18,4 @@ gsea_api==0.3.1
 scikit-gof==0.1.3
 nbpipeline==0.1.18
 pydantic==1.4
-nbformat==4.4.0
+nbimporter==0.3.2
