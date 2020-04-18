@@ -258,16 +258,23 @@ def choose_params(cross_validation, pipeline, verbose) -> Tuple[dict, DataFrame]
         good_params_sorted_by_vote = vote_result.reset_index().drop('vote_', axis=1)
 
         best_params = good_params_sorted_by_vote.iloc[0].to_dict()
-        second_best_params = good_params_sorted_by_vote.iloc[1].to_dict()
-
         scores_of_winner = Series(good_scores[frozenset(best_params.items())])
-        scores_of_second = Series(good_scores[frozenset(second_best_params.items())])
+
+        if len(good_params_sorted_by_vote) > 1:
+            second_best_params = good_params_sorted_by_vote.iloc[1].to_dict()
+            scores_of_second = Series(good_scores[frozenset(second_best_params.items())])
+            next_best_choice = (
+                f' compared to {scores_of_second.mean()}±{scores_of_second.std()} of the next best choice'
+                f' ({second_best_params}).'
+            )
+        else:
+            next_best_choice = ''
+
         print(
             f'Params chosen with CV vote: {best_params},'
             f' based on voting: {vote_result.head().to_dict()} '
             f' with average {pipeline.model.refit}={scores_of_winner.mean()}±{scores_of_winner.std()},'
-            f' compared to {scores_of_second.mean()}±{scores_of_second.std()} of the next best choice'
-            f' ({second_best_params}).'
+            f'{next_best_choice}'
         )
 
     return best_params, good_params
@@ -284,7 +291,8 @@ def cross_validate_and_test(
     test_data: Dict[str, DataFrame] = None,
     coefficients={'x': 'coef_'},
     multi_scale=True, test_size_min=0.3, test_size_max=0.3,
-    min_class_members=2, min_classes_number=2, max_class_number=2
+    min_class_members=2, min_classes_number=2, max_class_number=2,
+    warn_early=True
 ) -> CrossValidationResult:
     assert case_class in set(response)
 
@@ -297,7 +305,7 @@ def cross_validate_and_test(
         train_dataset = train_dataset.randomized(method=randomize)
 
     if early_normalization:
-        if not isinstance(pipeline, LeakyPipeline):
+        if warn_early and not isinstance(pipeline, LeakyPipeline):
             warn('Using early normalization without leaky pipeline - is this intended?')
         pipeline.fit_transform_blocks(train_dataset.data)
 
@@ -405,11 +413,15 @@ def null_distributions_over_cv(
         for group in groups
     }
 
+    if not isinstance(pipeline, LeakyPipeline):
+        warn('Using early normalization without leaky pipeline - is this intended?')
+
     for i in tqdm(range(permutations)):
         result = cross_validate_and_test(
             pipeline, train_data, response=response,
             randomize=method, progress_bar=False,
             only_coefficients=True, stripped=True,
+            warn_early=False,
             **kwargs
         )
 
