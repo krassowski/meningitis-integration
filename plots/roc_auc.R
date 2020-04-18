@@ -14,7 +14,15 @@ plot_roc_auc = function(
     if (is.null(roc_auc$group))
         roc_auc$group = 'AUC'
 
-    grouped = aggregate(roc_auc, list(group_name=roc_auc$group, color=roc_auc[[color]]), mean)
+    grouped = aggregate(
+        roc_auc,
+        list(
+            group_name=roc_auc$group,
+            color=roc_auc[[color]],
+            linetype=roc_auc[[linetype]]
+        ),
+        mean
+    )
     grouped$group = grouped$group_name
     grouped[[color]] = grouped$color
 
@@ -57,12 +65,13 @@ plot_roc_auc = function(
     if (annotate_lines) {
         if (nudge_x == 'auto') {
             nudge_x = (
-                if(!is.null(annotation_nudge_x))
+                if (!is.null(annotation_nudge_x))
                     annotation_nudge_x
                 else
                     min(lowest_fpr) - 0.05
             )
         }
+
         p = (p
             + annotate_line(
                 data=grouped,
@@ -90,6 +99,11 @@ plot_roc_auc = function(
                 segment.alpha=0.4,
                 nudge_x=nudge_x,
                 key_glyph='blank',
+                segment.linetype=ifelse(
+                    grouped$linetype == 'Cross-Validation',
+                    'dashed',
+                    'solid'
+                ),
                 ...
             )
         )
@@ -145,27 +159,6 @@ plot_roc_auc = function(
         + nice_theme
     )
     p
-}
-
-
-add_linetype_to_ggrepel = function(g, linetypes, modify='segment') {
-    library(grid)
-    g = grid.force(g)
-
-    labels <- grid.ls(
-        getGrob(g, c("GRID.labelrepelgrob"), grep=TRUE, global=TRUE),
-        print=F
-    )$name
-
-    for (i in 1:(length(labels) / 4)) {
-        g = editGrob(
-            grid.force(g),
-            c(labels[[4 * (i - 1) + 1]], modify), grep = TRUE,
-            gp = gpar(lty=linetypes[[i]]),
-            global=T
-        )
-    }
-    g
 }
 
 
