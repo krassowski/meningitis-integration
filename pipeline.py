@@ -343,6 +343,41 @@ NotebookRule(
     group='Integration'
 )
 
+NotebookRule(
+    'Correlations',
+    notebook='analyses/integration/Correlations.ipynb',
+    group='Integration'
+)
+
+NotebookRule(
+    'Logistic LASSO: single omic',
+    notebook='analyses/integration/Logistic_LASSO-A-single_omic.ipynb',
+    group='Integration',
+    execute=False
+)
+
+NotebookRule(
+    'Logistic LASSO: concatenated omics',
+    notebook='analyses/integration/Logistic_LASSO-B-concatenated.ipynb',
+    group='Integration',
+    execute=False
+)
+
+NotebookRule(
+    'PLS and PLS-DA',
+    notebook='analyses/integration/PLS_and_PLS-DA.ipynb',
+    group='Integration',
+    # just above 10 minutes...
+    # execute=False
+)
+
+NotebookRule(
+    'O2-PLS',
+    notebook='analyses/integration/O2-PLS.ipynb',
+    group='Integration',
+    execute=False
+)
+
 # TODO:
 
 #NotebookRule(
