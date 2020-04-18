@@ -55,7 +55,7 @@ class Result:
     @classmethod
     def from_test_set(cls, pipeline: MultiBlockPipeline, test_set: MultiBlockDataSet, train_set=None):
         return cls(
-            predicted_probabilities=[pipeline.predict.fit_predict(pipeline, test_set)],
+            predicted_probabilities=[pipeline.predict(pipeline, test_set)],
             binary_true_responses=[test_set.binary_response],
             test_data=test_set,
             train_data=train_set
