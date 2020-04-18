@@ -58,3 +58,6 @@ install.packages('survminer')
 install.packages('reshape')
 
 devtools::install_github("krassowski/complex-upset")
+install.packages('ggbeeswarm')
+install.packages('imager')
+install.packages('OmicsPLS')
