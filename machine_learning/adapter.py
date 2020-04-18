@@ -31,7 +31,10 @@ class SklearnAdapter(BlocksAdapter):
         return self
 
     def transform(self, blocks: Blocks):
-        assert set(blocks.keys()) == set(self.blocks_argument_map.keys())
+        additional = set(blocks.keys()) - set(self.blocks_argument_map.keys())
+        missing = set(self.blocks_argument_map.keys()) - set(blocks.keys())
+        if len(additional) != 0 or len(missing) != 0:
+            raise Exception(f'Too many keys provided, {additional} unrecognised, {missing} missing')
         return {
             self.blocks_argument_map[block_id]: block
             for block_id, block in blocks.items()
