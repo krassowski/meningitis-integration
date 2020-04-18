@@ -313,7 +313,7 @@ coefficients_volcano_plot = function(
         if (nrow(frequent) > safeguard) {
             print(paste0(
                 'Too many (', nrow(frequent), ') selected for highlighting.',
-                'Increase safeguard or change the criterion'
+                ' Increase safeguard or change the criterion'
             ))
             return(ggplot())
         }
@@ -331,6 +331,7 @@ coefficients_volcano_plot = function(
             segment.color='grey40',
             box.padding=box_padding,
             force=2,
+            max.overlaps=Inf,
             seed=label_seed
         )
         + ggrepel::geom_label_repel(
@@ -340,6 +341,7 @@ coefficients_volcano_plot = function(
             segment.alpha=0,
             box.padding=box_padding,
             force=2,
+            max.overlaps=Inf,
             seed=label_seed
         )
         + scale_shape_manual(name='sign', values=volatility_shape)
@@ -354,7 +356,7 @@ coefficients_volcano_plot = function(
         #+ scale_color_manual(values=c('grey', 'red'))
         + scale_color_manual(name=frequency_title, values=frequency_fill)
         + scale_fill_manual(name=frequency_title, values=frequency_fill)
-        + scale_alpha_manual(name='sign', values=list(
+        + scale_alpha_manual(name='sign', values=c(
             stable=1,
             'quite stable'=quite_stable_alpha,
             volatile=volatile_alpha
