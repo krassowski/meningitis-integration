@@ -61,3 +61,5 @@ devtools::install_github("krassowski/complex-upset")
 install.packages('ggbeeswarm')
 install.packages('imager')
 install.packages('OmicsPLS')
+
+BiocManager::install("pasilla")
