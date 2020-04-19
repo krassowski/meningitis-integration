@@ -1,27 +1,33 @@
-# Meningitis integration with PLS and network analysis
+# Meningitis omics integration with PLS, O2-PLS and LASSO
 
 [![Build Status](https://travis-ci.org/krassowski/meningitis-integration.svg?branch=master)](https://travis-ci.org/krassowski/meningitis-integration)
+
+
+### Scope
+
+Data: Transcriptomics (mRNA, gene-level) and proteomics (SOMAScan) integration + clinical data including survival, meningitis subtype and HIV status.
+
+For the list of analyses, please see the [Research_plan.md](Research_plan.md)
 
 ### Code organisation overview
 
 There will be three types of files in the repository:
- - Jupyter Notebooks (`.ipynb` extension) which contain high-level analysis code, table summaries and visualisations.
-  The idea is similar to Rmd files used in the R environment.
-  The notebooks can be viewed as HTML files (in browser) by simply clicking on them in the repository.
- - Python modules (`.py` extension) with implementation details for the Python functions.
- - R scripts (`.R` extension) with implementation details for the R functions.
+ - Jupyter Notebooks (`.ipynb`) which contain high-level analysis code, table summaries and visualisations.
+  The idea is similar to R markdown (`.Rmd`) files.
+  The notebooks can be viewed in the browser by clicking on them in the repository.
+ - Implementation details are stored in:
+   - Python modules (`.py`)
+   - R scripts (`.R`)
 
-Jupyter Notebooks be default use the Python kernel, though some cells may contain R code.
-This will be marked by the `%%R` at the beginning of the cell.
-Similarly, an exclamation mark represents a bash command, e.g. `!ls`.
+Most of the notebooks use the Python kernel, but some also contain R code. The R code in Python notebooks is marked by the `%%R` at the beginning of the cell. An exclamation mark represents a bash command, e.g. `!ls`.
 
 The generic helpers are stored in [helpers](helpers) directory, regardless of the implementation language.
 
 
 #### Automation for reproducibility
 
-The order of execution of each of the notebooks and scripts is described by the Snakemake-like workflow in the [pipeline.py](pipeline.py) file.
-Following a three-commands installation:
+The order of notebooks execution is described by the workflow rules in the [pipeline.py](pipeline.py) file.
+Following the installation with:
 
 ```bash
 # Download the code
@@ -34,20 +40,12 @@ cd meningitis-integration
 ./download.sh
 ```
 
-Execute nbpipline to reproduce all results of our study with:
+execute nbpipline to reproduce all results of our study with:
 
 ```bash
 # -i will generate an interactive graph featuring reproducibility reports
-nbpipline pipeline.py -i
+PYTHONPATH=$(pwd):$PYTHONPATH nbpipeline -i
 ```
-
-There is an excellent blog post on merits of a similar approach approach [here](http://ivory.idyll.org/blog/2018-repeatability-in-practice.html). Importantly we do not use snakemake as it is not ready yet to handle Jupyter notebooks the way we want to. 
-
-Note for future: we could use snakemake [remote files](https://snakemake.readthedocs.io/en/stable/snakefiles/remote_files.html) feature to move the data files out of this repository and and grant access to the data by providing authentication credential for the data access. 
-
-### Analyses
-
-For the list of conducted and planned analyses, please see the [Research_plan.md](Research_plan.md)
 
 #### The analyses plot
 
@@ -61,7 +59,7 @@ For static SVG plot use:
 nbpipline pipeline.py -g
 ```
 
-You can also append `-n` switch witch will skip execution of the pipeline and generate minimal plots (without reproducibility reports and code analysis):
+Append `-n` switch to skip execution of the pipeline and generate minimal plots (without reproducibility reports and code analysis):
 
 For static SVG plot use:
 ```bash
@@ -70,6 +68,14 @@ nbpipline pipeline.py -g -n
 
 ### Version compatibility
 
-Developed and tested with Python 3.7.2, R 3.5.1 and Ubuntu 19.04.
+Developed and tested with Python 3.7.6, R 3.6.3 and Ubuntu 19.10.
 
-We declared all our Python dependencies in `requirements.txt` file and R dependencies in `install.R` file.
+All dependencies are declared in:
+
+  - `requirements.txt` (Python)
+  - `install.R` (R)
+
+
+### About
+
+The code in this repository was written as a part of MRes research project at Imperial College London.
