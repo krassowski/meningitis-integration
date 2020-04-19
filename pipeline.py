@@ -164,6 +164,16 @@ NotebookRule(
 )
 
 NotebookRule(
+    'Quick unsupervised look at RNA',
+    notebook='exploration/rna/Unsupervised_analysis.ipynb',
+    input=dict(
+        gene_level_path = 'data/clean/rna/all_samples.csv',
+        clinical_path = 'data/clean/clinical/data.csv'
+    ),
+    group='RNA'
+)
+
+NotebookRule(
     'Match transcripts, proteins and patients',
     notebook='analyses/integration/Transcript-protein_matching.ipynb',
     group='Integration'
@@ -346,7 +356,8 @@ NotebookRule(
 NotebookRule(
     'Correlations',
     notebook='analyses/integration/Correlations.ipynb',
-    group='Integration'
+    group='Integration',
+    parameters={'n_permutations': 100}
 )
 
 NotebookRule(
@@ -367,6 +378,7 @@ NotebookRule(
     'PLS and PLS-DA',
     notebook='analyses/integration/PLS_and_PLS-DA.ipynb',
     group='Integration',
+    input=dict(
     # just above 10 minutes...
     # execute=False
 )
