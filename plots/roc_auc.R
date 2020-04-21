@@ -14,15 +14,21 @@ plot_roc_auc = function(
     if (is.null(roc_auc$group))
         roc_auc$group = 'AUC'
 
+    aggregate_by = list(
+        group_name=roc_auc$group,
+        color=roc_auc[[color]]
+    )
+
+    if (!is.null(linetype)) {
+        aggregate_by[['linetype']] = roc_auc[[linetype]]
+    }
+
     grouped = aggregate(
         roc_auc,
-        list(
-            group_name=roc_auc$group,
-            color=roc_auc[[color]],
-            linetype=roc_auc[[linetype]]
-        ),
+        aggregate_by,
         mean
     )
+
     grouped$group = grouped$group_name
     grouped[[color]] = grouped$color
 

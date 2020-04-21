@@ -237,15 +237,19 @@ coefficients_volcano_plot = function(
 ) {
     coeffs$is_frequent = coeffs[frequency] > 0.5
     coeffs$gene = rownames(coeffs)
-    coeffs_how_volatile = how_volatile(coeffs$volatile)
     coeffs = coeffs[order(-coeffs[frequency], coeffs$volatile), ]
+
+    highlighted = 'Labelled'
+    volatile_excluded = 0
 
     if (highlight_top) {
         top_coeffs = select_coeffs(coeffs, n, by=p_value, descending=neg)
-        top_coeffs = top_coeffs[
-            (highlight_volatile | how_volatile(top_coeffs$volatile) != 'volatile')
-            ,
-        ]
+        highlighted = paste0(highlighted, ' top n=', nrow(top_coeffs), ' features by ', p_value)
+        if (!highlight_volatile) {
+            is_volatile_coeff = how_volatile(top_coeffs$volatile) != 'volatile'
+            volatile_excluded = volatile_excluded + sum(is_volatile_coeff)
+            top_coeffs = top_coeffs[is_volatile_coeff, ]
+        }
     }
     else
         top_coeffs = data.frame()
@@ -298,14 +302,22 @@ coefficients_volcano_plot = function(
     p = p + do.call('geom_point', point_args)
 
     if (highlight_frequent != FALSE) {
-        frequent = coeffs[
-            (
-                coeffs[frequency] >= highlight_frequent
-                &
-                (coeffs_how_volatile != 'volatile' | highlight_volatile)
-            )
-            ,
-        ]
+        frequent = coeffs[coeffs[frequency] >= highlight_frequent, ]
+
+        if (!highlight_volatile) {
+            is_volatile_coeff = how_volatile(frequent$volatile) != 'volatile'
+            volatile_excluded = volatile_excluded + sum(is_volatile_coeff)
+            frequent = frequent[is_volatile_coeff, ]
+        }
+
+        if (highlight_top) {
+            highlighted = paste(highlighted, 'and')
+        }
+        highlighted = paste0(
+            highlighted, ' n=', nrow(frequent),
+            ' most frequently selected features (with frequency ≥ ', highlight_frequent, ')'
+        )
+
         if (nrow(frequent) == 0) {
             print('none selected, change frequency threshold')
             return(ggplot())
@@ -320,6 +332,15 @@ coefficients_volcano_plot = function(
     }
     else {
         frequent = data.frame()
+    }
+
+    highlighted = paste0(highlighted, '.')
+
+    if (volatile_excluded != 0) {
+        highlighted = paste0(
+            highlighted, '\nAdditional ', volatile_excluded,
+            ' features meeting criteria, but having volatile coefficient signs, were not labelled.'
+        )
     }
     highlight_data = rbind(frequent, top_coeffs)
     highlight_data = highlight_data[!duplicated(highlight_data), ]
@@ -365,6 +386,7 @@ coefficients_volcano_plot = function(
             fill=guide_legend(override.aes=list(shape=21)),
             shape=guide_legend(override.aes=list(fill='blue'))
         )
+        + labs(caption=highlighted)
     )
 }
 
