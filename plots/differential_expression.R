@@ -83,7 +83,9 @@ clean_and_subset_counts = function(counts, subset, skip_cols=NA) {
 
 gene_set_heatmap = function(
     pathways_subset, counts, collection, id_type,
-    skip_cols=outliers, id_to_gene_name=NA, trim=35, ...
+    skip_cols=outliers, id_to_gene_name=NA, trim=35,
+    show_colnames=FALSE,
+    ...
 ) {
 
     if (nrow(pathways_subset) == 0)
@@ -113,7 +115,7 @@ gene_set_heatmap = function(
 
     pheatmap::pheatmap(
         counts,
-        show_colnames=T,
+        show_colnames=show_colnames,
         show_rownames=T,
         annotation_col=counts_patient_annotations,
         annotation_colors=patient_colors,

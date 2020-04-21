@@ -371,14 +371,16 @@ NotebookRule(
     'Logistic LASSO: concatenated omics',
     notebook='analyses/integration/Logistic_LASSO-B-concatenated.ipynb',
     group='Integration',
-    execute=False
+    parameters={
+        'CV_REPEATS_DEMONSTRATIONS': 2,
+        'CV_REPEATS_FINAL_MODEL': 4
+    }
 )
 
 NotebookRule(
     'PLS and PLS-DA',
     notebook='analyses/integration/PLS_and_PLS-DA.ipynb',
     group='Integration',
-    input=dict(
     # just above 10 minutes...
     # execute=False
 )
@@ -387,7 +389,10 @@ NotebookRule(
     'O2-PLS',
     notebook='analyses/integration/O2-PLS.ipynb',
     group='Integration',
-    execute=False
+    parameters={
+        'CV_REPEATS': 2,
+        'MAX_COMPONENTS': 2
+    }
 )
 
 # TODO:
