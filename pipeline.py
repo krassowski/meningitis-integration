@@ -364,7 +364,10 @@ NotebookRule(
     'Logistic LASSO: single omic',
     notebook='analyses/integration/Logistic_LASSO-A-single_omic.ipynb',
     group='Integration',
-    execute=False
+    parameters=dict(
+        CV_REPEATS = 4,
+        NULL_PERMUTATIONS = 4
+    )
 )
 
 NotebookRule(
