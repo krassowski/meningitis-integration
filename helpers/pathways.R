@@ -435,18 +435,29 @@ collapse_ranking_clusters = function(pathways_ranking, clusters, names, collapse
 }
 
 
-get_statistic = function(coeffs, statistic) {
+get_statistic = function(coeffs, statistic, na_policy='raise') {
     if (length(statistic) != 1) {
         stop('Statistic should be a name of a single column')
     }
     values = as.numeric(coeffs[, statistic])
     names(values) = rownames(coeffs)
+    if (any(is.na(values))) {
+        if (na_policy == 'raise') {
+            stop('NA in statistic')
+        } else if (na_policy == 'drop') {
+            before = length(values)
+            values = na.omit(values)
+            print(paste('Removed', before - length(values), 'NAs'))
+        } else {
+            stop('Unknown na_policy')
+        }
+    }
     values
 }
 
 
-camera_pr = function(data, statistic='mean', collection) {
-    data = get_statistic(data, statistic)
+camera_pr = function(data, statistic='mean', collection, na_policy='drop') {
+    data = get_statistic(data, statistic, na_policy=na_policy)
     result = limma::cameraPR(
         data,
         collection
