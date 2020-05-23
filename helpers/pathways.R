@@ -464,3 +464,27 @@ camera_pr = function(data, statistic='mean', collection, na_policy='drop') {
     )
     result[order(result$PValue), ]
 }
+
+
+base_contributions_pathways = function(data, label) {
+    data$gene = rownames(data)
+    data$kind = label
+    data$from = label
+    data
+}
+
+
+contributions_pathways = function(data, label, RNA, protein, rna_label, protein_label) {
+    data$gene = rownames(data)
+    data$kind = label
+    data$from = ifelse(
+        rownames(data) %in% rownames(RNA) & rownames(data) %in% rownames(protein),
+        'Both',
+        ifelse(
+            rownames(data) %in% rownames(RNA),
+            rna_label,
+            ifelse(rownames(data) %in% rownames(protein), protein_label, 'Neither')
+        )
+    )
+    data
+}
