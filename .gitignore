@@ -1,5 +1,11 @@
 .idea/
 helpers/_venn.py
+*.csv
+*.json
+*.gmt
+*.tsv
+*.gz
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
