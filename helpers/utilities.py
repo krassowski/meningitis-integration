@@ -20,7 +20,7 @@ from IPython.display import HTML
 from pandas import read_table, read_csv, read_excel, concat, Series, DataFrame
 import numpy as np
 from tqdm.auto import tqdm
-from nbpipeline.io import create_paths, save_outputs, load_inputs
+from .io import create_paths, save_outputs, load_inputs
 
 pd.options.display.max_rows = 10
 pd.options.display.max_columns = 10
