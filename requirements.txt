@@ -1,5 +1,5 @@
 numpy==1.18.1
-ipython==7.13.0
+ipython==7.16.3
 pandas==1.0.1
 jupyterlab==2.1.0
 jupyter-helpers==0.1.1
